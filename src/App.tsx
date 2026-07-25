@@ -225,7 +225,7 @@ function App() {
   const [showComparison, setShowComparison] = useState(false)
   const [zoomIndex, setZoomIndex] = useState<{ startIndex: number; endIndex: number } | null>(null)
 
-  const loadActivity = (buffer: ArraryBuffer, name: string, setData: (data: FileData) => void) => {
+  const loadActivity = (buffer: ArrayBuffer, name: string, setData: (data: FileData) => void) => {
     const fitParser = new FitParser({
       force: true,
       speedUnit: 'km/h',
@@ -236,7 +236,7 @@ function App() {
       mode: 'cascade',
     })
 
-    
+
     fitParser.parse(buffer, (error: Error | null, data: unknown) => {
       if (error) {
         console.error('Error parsing FIT file:', error)
@@ -263,14 +263,14 @@ function App() {
     reader.onload = (e) => {
       loadActivity(e.target?.result as ArrayBuffer, file.name, setData)
     }
-    reader.readAsArraryBuffer(file)
+    reader.readAsArrayBuffer(file)
   }
 
   const loadSample = (sample: { name: string; url: string }, setData: (data: FileData) => void) => {
     fetch(sample.url)
       .then((r) => r.arrayBuffer())
       .then((buf) => loadActivity(buf, sample.name, setData))
-      .catch((er) => {
+      .catch((err) => {
         console.error('Error loading sample: ', err)
         alert('Error laoding sample file')
       })
