@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import './App.css'
 import FitParser from 'fit-file-parser'
-import { parseFitData, type SimplifiedFitData, type SimplifiedActivity } from './utils/fitDataParser'
+import { parseFitData, type SimplifiedFitData, type SimplifiedActivity, type SimplifiedLapRecord } from './utils/fitDataParser'
 import * as echarts from 'echarts'
 
 interface FileData {
@@ -38,15 +38,19 @@ const EChartsComponent: React.FC<EChartsComponentProps> = ({
 
     const chart = chartInstanceRef.current
 
-    // Extract actual series names from data (keys other than 'timestamp')
-    const seriesNames: string[] = []
-    if (data.length > 0) {
-      Object.keys(data[0]).forEach((key) => {
+    //
+    //
+    //
+    //
+    const seriesNameSet = new Set<string>()
+    data.forEach((d) => {
+      Object.keys(d).forEach((key) => {
         if (key !== 'timestamp') {
-          seriesNames.push(key)
+          seriesNameSet.add(key)
         }
       })
-    }
+    })
+    const seriesNames: string[] = Array.from(seriesNameSet)
 
     console.log('ECharts Data Debug:', {
       dataLength: data.length,
@@ -160,6 +164,7 @@ const EChartsComponent: React.FC<EChartsComponentProps> = ({
         smooth: false,
         symbol: 'none',
         sampling: 'lttb',
+        connectNulls: true,
       })),
     }
 
@@ -279,74 +284,28 @@ function App() {
     const series1Name = file1Name === file2Name ? `${file1Name} (1)` : file1Name
     const series2Name = file1Name === file2Name ? `${file2Name} (2)` : file2Name
     
-    // Sort both file records by timestamp for proper merging
-    const file1Records = [...file1Data.activity.records].sort(
-      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    )
-    const file2Records = [...file2Data.activity.records].sort(
-      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    )
-    
-    const dataMap = new Map<string, GraphDataPoint>()
-    
-    // Use a more robust merging strategy
-    let file2Index = 0
-    
-    file1Records.forEach((record1) => {
-      const timestamp1 = new Date(record1.timestamp).getTime()
-      const point: GraphDataPoint = {
-        timestamp: record1.timestamp,
-        [series1Name]: record1.heartRate || 0,
-      }
-      
-      // Try to find matching record from file2
-      if (file2Index < file2Records.length) {
-        const record2 = file2Records[file2Index]
-        const timestamp2 = new Date(record2.timestamp).getTime()
-        
-        // If timestamps are close (within 1 second), consider them a match
-        if (Math.abs(timestamp1 - timestamp2) < 1000) {
-          point[series2Name] = record2.heartRate || 0
-          file2Index++
+    const dataMap = new Map<number, GraphDataPoint>()
+
+    const mergeRecords = (records: SimplifiedLapRecord[], seriesName: string) => {
+      records.forEach((record) => {
+        const secondKey = Math.round(new Date(record.timestamp).getTime() / 1000)
+        let point = dataMap.get(secondKey)
+        if (!point) {
+          point = { timestamp: new Date(secondKey * 1000).toISOString() }
+          dataMap.set(secondKey, point)
         }
-      }
-      
-      dataMap.set(record1.timestamp, point)
-    })
-    
-    // Add any remaining file2 records that didn't have a file1 match
-    while (file2Index < file2Records.length) {
-      const record2 = file2Records[file2Index]
-      const existing = dataMap.get(record2.timestamp)
-      if (existing) {
-        existing[series2Name] = record2.heartRate || 0
-      } else {
-        dataMap.set(record2.timestamp, {
-          timestamp: record2.timestamp,
-          [series2Name]: record2.heartRate || 0,
-        })
-      }
-      file2Index++
+        point[seriesName] = record.heartRate || 0
+      })
     }
+    
+    mergeRecords(file1Data.activity.records, series1Name)
+    mergeRecords(file2Data.activity.records, series2Name)
 
-    const allData = Array.from(dataMap.values()).sort(
-      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    )
-
-    console.log('Combined Graph Data Debug:', {
-      file1Name,
-      file2Name,
-      series1Name,
-      series2Name,
-      dataMapSize: dataMap.size,
-      file1Records: file1Data.activity.records.length,
-      file2Records: file2Data.activity.records.length,
-      allDataLength: allData.length,
-      sampleDataPoint: allData[0],
-    })
-
-    // Return full data (no filtering here for ReferenceArea to work)
-    return allData
+    const allData = Array.from(dataMap.entries())
+      .sort((a,b) => a[0] - b[0])
+      .map(([, point]) => point)
+  
+      return allData
   }
 
   const handleZoomChange = (range: { startIndex: number; endIndex: number } | null) => {
