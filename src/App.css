@@ -315,6 +315,34 @@
   animation: fadeIn 0.3s ease-in;
 }
 
+.uplaod-or {
+  display: block;
+  margin: 0.75rem 0;
+  color: #666;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.sample-select {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 2px solid #ff6b35;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.sample-select:focus {
+  border-color: #ffa500;
+  box-shadow: 0 0 0 0.3rem rgba(255, 107, 53, 0.2);
+  outline: none;
+}
+
 .upload-card {
   background: linear-gradient(135deg, #1a1f3a 0%, #2d2e4f 100%);
   padding: 2rem;

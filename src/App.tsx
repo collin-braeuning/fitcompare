@@ -4,6 +4,17 @@ import FitParser from 'fit-file-parser'
 import { parseFitData, type SimplifiedFitData, type SimplifiedActivity, type SimplifiedLapRecord } from './utils/fitDataParser'
 import * as echarts from 'echarts'
 
+const sampleUrls = import.meta.glob('/data/*.{fit,FIT}', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+}) as Record<string, string>
+
+const SAMPLES = Object.entries(sampleUrls).map(([path, url]) => ({
+  name: path.split('/').pop()!.replace(/\.[^/.]+$/, ''),
+    url,
+}))
+
 interface FileData {
   fileName: string
   activity: SimplifiedActivity
@@ -214,42 +225,54 @@ function App() {
   const [showComparison, setShowComparison] = useState(false)
   const [zoomIndex, setZoomIndex] = useState<{ startIndex: number; endIndex: number } | null>(null)
 
+  const loadActivity = (buffer: ArraryBuffer, name: string, setData: (data: FileData) => void) => {
+    const fitParser = new FitParser({
+      force: true,
+      speedUnit: 'km/h',
+      lengthUnit: 'km',
+      temperatureUnit: 'celsius',
+      pressureUnit: 'bar',
+      elapsedRecordField: true,
+      mode: 'cascade',
+    })
+
+    fitParser.parse(buffer, (error: Error | null, data: unknown) => {
+      if (error) {
+        console.error('Error parsing FIT file:', error)
+        alert(`Error parsing file: ${error.message}`)
+      } else {
+        try {
+          const simplifiedData: SimplifiedFitData = parseFitData(data)
+          if (simplifiedData.activities.length > 0) {
+            setData({
+              fileName: name.replace(/\.[^/.]+$/, ''),
+              activity: simplifiedData.activities[0],
+            })
+          }
+        } catch (parseError) {
+          console.error('Error parsing simplified FIT data:', parseError)
+          alert('Error processing FIT data')
+        }
+      }
+    })
+  }
+  
   const parseFile = (file: File, setData: (data: FileData) => void) => {
     const reader = new FileReader()
     reader.onload = (e) => {
-      const arrayBuffer = e.target?.result as ArrayBuffer
-
-      const fitParser = new FitParser({
-        force: true,
-        speedUnit: 'km/h',
-        lengthUnit: 'km',
-        temperatureUnit: 'celsius',
-        pressureUnit: 'bar',
-        elapsedRecordField: true,
-        mode: 'cascade',
-      })
-
-      fitParser.parse(arrayBuffer, (error: Error | null, data: unknown) => {
-        if (error) {
-          console.error('Error parsing FIT file:', error)
-          alert(`Error parsing file: ${error.message}`)
-        } else {
-          try {
-            const simplifiedData: SimplifiedFitData = parseFitData(data)
-            if (simplifiedData.activities.length > 0) {
-              setData({
-                fileName: file.name.replace(/\.[^/.]+$/, ''),
-                activity: simplifiedData.activities[0],
-              })
-            }
-          } catch (parseError) {
-            console.error('Error parsing simplified FIT data:', parseError)
-            alert('Error processing FIT data')
-          }
-        }
-      })
+      loadActivity(e.target?.result as ArrayBuffer, file.name, setData)
     }
-    reader.readAsArrayBuffer(file)
+    reader.readAsArraryBuffer(file)
+  }
+
+  const loadSample = (sample: { name: string; url: string }, setData: (data: FileData) => void) => {
+    fetch(sample.url)
+      .then((r) => r.arrayBuffer())
+      .then((buf) => loadActivity(buf, sample.name, setData))
+      .catch((er) => {
+        console.error('Error loading sample: ', err)
+        alert('Error laoding sample file')
+      })
   }
 
   const handleFile1Upload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -452,6 +475,24 @@ function App() {
                         onChange={handleFile1Upload}
                         accept=".fit"
                       />
+                      {SAMPLES.length > 0 && (
+                        <>
+                          <span className="upload-or">or</span>
+                          <select 
+                            className="form-control sample-select"
+                            defaultValue=""
+                            onChange={(e) => {
+                              const s = SAMPLES.find((s) => s.name === e.target.value)
+                              if (s) loadSample(s, setFile1Data)
+                            }}
+                        >
+                            <option value="" disabled>Load a sample activity...</option>
+                            {SAMPLES.map((s) => (
+                              <option key={s.name} value={s.name}>{s.name}</option>
+                            ))}
+                          </select>
+                        </>
+                      )}
                     </>
                   )}
                 </div>
@@ -478,6 +519,24 @@ function App() {
                         onChange={handleFile2Upload}
                         accept=".fit"
                       />
+                      {SAMPLES.length > 0 && (
+                        <>
+                          <span className="upload-or">or</span>
+                          <select 
+                            className="form-control sample-select"
+                            defaultValue=""
+                            onChange={(e) => {
+                              const s = SAMPLES.find((s) => s.name === e.target.value)
+                              if (s) loadSample(s, setFile2Data)
+                            }}
+                        >
+                            <option value="" disabled>Load a sample activity...</option>
+                            {SAMPLES.map((s) => (
+                              <option key={s.name} value={s.name}>{s.name}</option>
+                            ))}
+                          </select>
+                        </>
+                      )}
                     </>
                   )}
                 </div>
