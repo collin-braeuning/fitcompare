@@ -159,11 +159,6 @@ const EChartsComponent: React.FC<EChartsComponentProps> = ({
           },
           bottom: 20,
         },
-        {
-          type: 'inside',
-          start: zoomIndex ? (zoomIndex.startIndex / data.length) * 100 : 0,
-          end: zoomIndex ? ((zoomIndex.endIndex + 1) / data.length) * 100 : 100,
-        },
       ],
       series: seriesNames.map((name, index) => ({
         name,
@@ -417,13 +412,6 @@ function App() {
                       <button className="btn btn-small btn-reset" onClick={resetZoom}>
                         Reset Zoom
                       </button>
-                    )}
-                  </div>
-                  <div className="graph-instructions">
-                    {!zoomIndex ? (
-                      <p>📍 Drag to select an area on the graph to zoom in | Scroll to zoom | Click reset to see full range</p>
-                    ) : (
-                      <p>🔍 Zoomed view | Click "Reset Zoom" to see full range</p>
                     )}
                   </div>
                   <EChartsComponent
