@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import './App.css'
 import FitParser from 'fit-file-parser'
 import { parseFitData, type SimplifiedFitData, type SimplifiedActivity, type SimplifiedLapRecord } from './utils/fitDataParser'
@@ -152,8 +152,8 @@ const EChartsComponent: React.FC<EChartsComponentProps> = ({
         {
           type: 'slider',
           show: true,
-          start: zoomIndex ? (zoomIndex.startIndex / data.length) * 100 : 0,
-          end: zoomIndex ? ((zoomIndex.endIndex + 1) / data.length) * 100 : 100,
+          start: 0,
+          end: 100,
           textStyle: {
             color: '#bbb',
           },
@@ -210,7 +210,14 @@ const EChartsComponent: React.FC<EChartsComponentProps> = ({
       window.removeEventListener('resize', handleResize)
       chart.off('datazoom', handleDataZoom)
     }
-  }, [data, zoomIndex, onZoomChange])
+  }, [data, onZoomChange])
+
+  useEffect(() => {
+    const chart = chartInstanceRef.current
+    if(chart && zoomIndex === null) {
+      chart.dispatchAction({ type: 'dataZoom', start: 0, end: 100 })
+    }
+  }, [zoomIndex])
 
   return <div ref={chartRef} className="echarts-container" />
 }
@@ -294,7 +301,7 @@ function App() {
     return name.replace(/\.[^/.]+$/, '')
   }
 
-  const getCombinedGraphData = (): GraphDataPoint[] => {
+  const combinedGraphData = useMemo((): GraphDataPoint[] => {
     if (!file1Data || !file2Data) return []
 
     const file1Name = getFileName(file1Data.fileName)
@@ -326,11 +333,11 @@ function App() {
       .map(([, point]) => point)
   
       return allData
-  }
+  }, [file1Data, file2Data])
 
-  const handleZoomChange = (range: { startIndex: number; endIndex: number } | null) => {
+  const handleZoomChange = useCallback((range: { startIndex: number; endIndex: number } | null) => {
     setZoomIndex(range)
-  }
+  }, [])
 
   const resetZoom = () => {
     setZoomIndex(null)
@@ -415,7 +422,7 @@ function App() {
                     )}
                   </div>
                   <EChartsComponent
-                    data={getCombinedGraphData()}
+                    data={combinedGraphData}
                     zoomIndex={zoomIndex}
                     onZoomChange={handleZoomChange}
                   />
