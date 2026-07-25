@@ -236,6 +236,7 @@ function App() {
       mode: 'cascade',
     })
 
+    
     fitParser.parse(buffer, (error: Error | null, data: unknown) => {
       if (error) {
         console.error('Error parsing FIT file:', error)
