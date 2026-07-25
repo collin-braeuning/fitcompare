@@ -424,6 +424,14 @@
 .comparison-table {
   width: 100%;
   border-collapse: collapse;
+  /* keep details box inside mobile viewport */
+  table-layout: fixed; 
+}
+
+/* keep details box inside mobile viewport */
+.comparison-table th,
+.comparison-table td {
+  overflow-wrap: anywhere;
 }
 
 .comparison-table thead {
