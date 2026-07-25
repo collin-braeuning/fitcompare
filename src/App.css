@@ -34,7 +34,7 @@
 /* Main Content Container */
 .main-content {
   padding: 2rem 1rem;
-  max-width: 1200px;
+  max-width: none;
   width: 100%;
 }
 
@@ -197,7 +197,7 @@
 /* Graph Card */
 .graph-card {
   background: linear-gradient(135deg, #1a1f3a 0%, #2d2e4f 100%);
-  padding: 2rem;
+  padding: 1.5rem 1rem;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   color: white;
