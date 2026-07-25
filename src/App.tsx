@@ -14,7 +14,7 @@ const SAMPLES = Object.entries(sampleUrls).map(([path, url]) => ({
   name: path.split('/').pop()!.replace(/\.[^/.]+$/, ''),
     url,
 }))
-.sort((a, b) => b.name.localCompare(a.name)) // more recent dates float to top
+.sort((a, b) => b.name.localeCompare(a.name)) // more recent dates float to top
 
 interface FileData {
   fileName: string
