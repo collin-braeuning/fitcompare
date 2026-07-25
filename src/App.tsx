@@ -132,7 +132,7 @@ const EChartsComponent: React.FC<EChartsComponentProps> = ({
       },
       yAxis: {
         type: 'value',
-        scale: 'true',
+        scale: true,
         name: 'Heart Rate (bpm)',
         nameTextStyle: {
           color: '#bbb',
