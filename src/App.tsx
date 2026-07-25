@@ -89,10 +89,10 @@ const EChartsComponent: React.FC<EChartsComponentProps> = ({
         color: '#bbb',
       },
       grid: {
-        top: '12%',
-        left: '5%',
-        right: '5%',
-        bottom: '25%',
+        top: '5%',
+        left: '2%',
+        right: '2%',
+        bottom: '20%',
         containLabel: true,
       },
       tooltip: {
@@ -110,6 +110,11 @@ const EChartsComponent: React.FC<EChartsComponentProps> = ({
           color: '#bbb',
         },
         bottom: 50,
+        itemStyle: {
+          // hides the dots in the legend
+          color: 'transparent', 
+          borderColor: 'transparent' 
+        },
       },
       xAxis: {
         type: 'category',
@@ -127,6 +132,7 @@ const EChartsComponent: React.FC<EChartsComponentProps> = ({
       },
       yAxis: {
         type: 'value',
+        scale: 'true',
         name: 'Heart Rate (bpm)',
         nameTextStyle: {
           color: '#bbb',
@@ -169,9 +175,12 @@ const EChartsComponent: React.FC<EChartsComponentProps> = ({
           width: 2,
         },
         smooth: false,
-        symbol: 'none',
+        symbol: 'none', // hide dots
+        itemStyle: {
+          color: index === 0 ? '#ff6b35' : '#3498db'  // Color of the dots
+        },
         sampling: 'lttb',
-        connectNulls: true,
+        connectNulls: false,
       })),
     }
 
