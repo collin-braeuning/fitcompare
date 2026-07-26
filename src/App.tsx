@@ -3,6 +3,7 @@ import './App.css'
 import FitParser from 'fit-file-parser'
 import { parseFitData, type SimplifiedFitData, type SimplifiedActivity, type SimplifiedLapRecord } from './utils/fitDataParser'
 import * as echarts from 'echarts'
+import { calculateCorrelation, findMatchingDataPoints } from './utils/correlation'
 
 const sampleUrls = import.meta.glob('/data/*.{fit,FIT}', {
   eager: true,
@@ -348,8 +349,41 @@ function App() {
     setZoomIndex(range)
   }, [])
 
+  const correlationData = useMemo(() => {
+    if (!file1Data || !file2Data || combinedGraphData.length === 0) return null
+
+    const file1Name = getFileName(file1Data.fileName)
+    const file2Name = getFileName(file2Data.fileName)
+    const series1Name = file1Name === file2Name ? `${file1Name} (1)` : file1Name
+    const series2Name = file1Name === file2Name ? `${file2Name} (2)` : file2Name
+
+    const file1Values: number[] = []
+    const file2Values: number[] = []
+
+    for (const point of combinedGraphData) {
+      const hr1 = point[series1Name] as number
+      const hr2 = point[series2Name] as number
+      if (hr1 && hr2 && hr1 !== 0 && hr2 !== 0) {
+        file1Values.push(hr1)
+        file2Values.push(hr2)
+      }
+    }
+
+    if (file1Values.length < 2) return null
+
+    const r = calculateCorrelation(file1Values, file2Values)
+    return { r, matchingPoints: file1Values.length }
+  }, [file1Data, file2Data, combinedGraphData])
+
   const resetZoom = () => {
     setZoomIndex(null)
+  }
+
+  const getCorrelationColor = (r: number): string => {
+    const absR = Math.abs(r)
+    if (absR >= 0.7) return 'correlation-high'
+    if (absR >= 0.4) return 'correlation-medium'
+    return 'correlation-low'
   }
 
   return (
@@ -424,6 +458,16 @@ function App() {
                 <div className="graph-card">
                   <div className="graph-header">
                     <h5>Heart Rate Comparison</h5>
+                    {correlationData && (
+                      <div className="correlation-badge">
+                        <span className={`correlation-badge-value ${getCorrelationColor(correlationData.r)}`}>
+                          R = {correlationData.r.toFixed(3)}
+                        </span>
+                        <span className="correlation-badge-points">
+                          ({correlationData.matchingPoints} pts)
+                        </span>
+                      </div>
+                    )}
                     {zoomIndex && (
                       <button className="btn btn-small btn-reset" onClick={resetZoom}>
                         Reset Zoom

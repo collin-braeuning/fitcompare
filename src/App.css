@@ -481,6 +481,63 @@
   background-color: rgba(52, 152, 219, 0.08);
 }
 
+/* Correlation Row */
+.correlation-row {
+  background: linear-gradient(135deg, rgba(26, 31, 58, 0.9) 0%, rgba(45, 46, 79, 0.9) 100%);
+}
+
+.correlation-row:hover {
+  background-color: rgba(255, 107, 53, 0.1);
+}
+
+.correlation-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-right: 0.75rem;
+}
+
+.correlation-points {
+  font-size: 0.85rem;
+  color: #999;
+  font-weight: 500;
+}
+
+.correlation-high {
+  color: #27ae60;
+}
+
+.correlation-medium {
+  color: #f39c12;
+}
+
+.correlation-low {
+  color: #e74c3c;
+}
+
+/* Correlation Badge (in graph header) */
+.correlation-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(26, 31, 58, 0.8);
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 0.4rem 0.9rem;
+  margin-left: auto;
+  margin-right: 1rem;
+}
+
+.correlation-badge-value {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.correlation-badge-points {
+  font-size: 0.8rem;
+  color: #888;
+  font-weight: 500;
+}
+
 .activity-panel {
   background: linear-gradient(135deg, #1a1f3a 0%, #2d2e4f 100%);
   border-radius: 8px;
