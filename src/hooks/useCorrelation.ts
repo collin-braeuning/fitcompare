@@ -2,12 +2,12 @@ import { useMemo } from 'react'
 import type { FileData, GraphDataPoint } from '../types/fitTypes'
 import { calculateCorrelation } from '../utils/correlation'
 
-export function useCorrelation(file1Data: FileData | null, file2Data: FileData | null, combinedGraphData: GraphDataPoint[]) {
+export function useCorrelation(file1Loaded: FileData | null, file2Loaded: FileData | null, combinedGraphData: GraphDataPoint[]) {
   const correlationData = useMemo(() => {
-    if (!file1Data || !file2Data || combinedGraphData.length === 0) return null
+    if (!file1Loaded || !file2Loaded || combinedGraphData.length === 0) return null
 
-    const file1Name = file1Data.fileName.replace(/\.[^/.]+$/, '')
-    const file2Name = file2Data.fileName.replace(/\.[^/.]+$/, '')
+    const file1Name = file1Loaded.fileName.replace(/\.[^/.]+$/, '')
+    const file2Name = file2Loaded.fileName.replace(/\.[^/.]+$/, '')
     const series1Name = file1Name === file2Name ? `${file1Name} (1)` : file1Name
     const series2Name = file1Name === file2Name ? `${file2Name} (2)` : file2Name
 
@@ -27,7 +27,7 @@ export function useCorrelation(file1Data: FileData | null, file2Data: FileData |
 
     const r = calculateCorrelation(file1Values, file2Values)
     return { r, matchingPoints: file1Values.length }
-  }, [file1Data, file2Data, combinedGraphData])
+  }, [file1Loaded, file2Loaded, combinedGraphData])
 
   const getCorrelationColor = (r: number): string => {
     const absR = Math.abs(r)

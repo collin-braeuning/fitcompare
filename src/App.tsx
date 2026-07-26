@@ -10,20 +10,14 @@ import { useCorrelation } from './hooks/useCorrelation'
 import type { FileData } from './types/fitTypes'
 
 function App() {
-  const [file1Data, setFile1Data] = useState<FileData | null>(null)
-  const [file2Data, setFile2Data] = useState<FileData | null>(null)
   const [showComparison, setShowComparison] = useState(false)
   const [zoomIndex, setZoomIndex] = useState<{ startIndex: number; endIndex: number } | null>(null)
 
   const { data: file1Loaded, parseFile: parseFile1, loadSample: loadSample1, reset: resetFile1 } = useFitFileLoader()
   const { data: file2Loaded, parseFile: parseFile2, loadSample: loadSample2, reset: resetFile2 } = useFitFileLoader()
 
-  // Sync loaded data with local state
-  if (file1Loaded && file1Data !== file1Loaded) setFile1Data(file1Loaded)
-  if (file2Loaded && file2Data !== file2Loaded) setFile2Data(file2Loaded)
-
-  const { combinedGraphData } = useGraphData(file1Data, file2Data)
-  const { correlationData, getCorrelationColor } = useCorrelation(file1Data, file2Data, combinedGraphData)
+  const { combinedGraphData } = useGraphData(file1Loaded, file2Loaded)
+  const { correlationData, getCorrelationColor } = useCorrelation(file1Loaded, file2Loaded, combinedGraphData)
 
   const handleZoomChange = useCallback((range: { startIndex: number; endIndex: number } | null) => {
     setZoomIndex(range)
@@ -46,7 +40,7 @@ function App() {
 
       {/* Main Content */}
       <div className="container main-content">
-        {showComparison && file1Data && file2Data ? (
+        {showComparison && file1Loaded && file2Loaded ? (
           // Comparison View
           <div className="comparison-view">
             {/* Activity Panels */}
@@ -57,45 +51,45 @@ function App() {
                     <thead>
                       <tr>
                         <th className="label-column">Metric</th>
-                        <th className="data-column">{file1Data.fileName}</th>
-                        <th className="data-column">{file2Data.fileName}</th>
+                        <th className="data-column">{file1Loaded.fileName}</th>
+                        <th className="data-column">{file2Loaded.fileName}</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr>
                         <td className="label-cell">Sport</td>
-                        <td className="data-cell">{file1Data.activity.sport}</td>
-                        <td className="data-cell">{file2Data.activity.sport}</td>
+                        <td className="data-cell">{file1Loaded.activity.sport}</td>
+                        <td className="data-cell">{file2Loaded.activity.sport}</td>
                       </tr>
                       <tr>
                         <td className="label-cell">Sub Sport</td>
-                        <td className="data-cell">{file1Data.activity.subSport}</td>
-                        <td className="data-cell">{file2Data.activity.subSport}</td>
+                        <td className="data-cell">{file1Loaded.activity.subSport}</td>
+                        <td className="data-cell">{file2Loaded.activity.subSport}</td>
                       </tr>
                       <tr>
                         <td className="label-cell">Average Heart Rate (bpm)</td>
-                        <td className="data-cell">{file1Data.activity.avgHeartRate}</td>
-                        <td className="data-cell">{file2Data.activity.avgHeartRate}</td>
+                        <td className="data-cell">{file1Loaded.activity.avgHeartRate}</td>
+                        <td className="data-cell">{file2Loaded.activity.avgHeartRate}</td>
                       </tr>
                       <tr>
                         <td className="label-cell">Max Heart Rate (bpm)</td>
-                        <td className="data-cell">{file1Data.activity.maxHeartRate}</td>
-                        <td className="data-cell">{file2Data.activity.maxHeartRate}</td>
+                        <td className="data-cell">{file1Loaded.activity.maxHeartRate}</td>
+                        <td className="data-cell">{file2Loaded.activity.maxHeartRate}</td>
                       </tr>
                       <tr>
                         <td className="label-cell">Start Time</td>
-                        <td className="data-cell">{formatDate(file1Data.activity.startTime)}</td>
-                        <td className="data-cell">{formatDate(file2Data.activity.startTime)}</td>
+                        <td className="data-cell">{formatDate(file1Loaded.activity.startTime)}</td>
+                        <td className="data-cell">{formatDate(file2Loaded.activity.startTime)}</td>
                       </tr>
                       <tr>
                         <td className="label-cell">End Time</td>
-                        <td className="data-cell">{formatDate(file1Data.activity.timestamp)}</td>
-                        <td className="data-cell">{formatDate(file2Data.activity.timestamp)}</td>
+                        <td className="data-cell">{formatDate(file1Loaded.activity.timestamp)}</td>
+                        <td className="data-cell">{formatDate(file2Loaded.activity.timestamp)}</td>
                       </tr>
                       <tr>
                         <td className="label-cell">Total Records</td>
-                        <td className="data-cell">{file1Data.activity.records.length}</td>
-                        <td className="data-cell">{file2Data.activity.records.length}</td>
+                        <td className="data-cell">{file1Loaded.activity.records.length}</td>
+                        <td className="data-cell">{file2Loaded.activity.records.length}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -140,10 +134,7 @@ function App() {
                 <button
                   className="btn btn-secondary mt-4"
                   onClick={() => {
-                    setFile1Data(null)
-                    setFile2Data(null)
                     setShowComparison(false)
-                    resetZoom()
                     resetFile1()
                     resetFile2()
                   }}
@@ -160,7 +151,7 @@ function App() {
               <div className="col-lg-6 mb-4">
                 <UploadCard
                   label="File 1"
-                  data={file1Data}
+                  data={file1Loaded}
                   onFileChange={parseFile1}
                   onSampleChange={loadSample1}
                   sampleKey="fileInput1"
@@ -170,7 +161,7 @@ function App() {
               <div className="col-lg-6 mb-4">
                 <UploadCard
                   label="File 2"
-                  data={file2Data}
+                  data={file2Loaded}
                   onFileChange={parseFile2}
                   onSampleChange={loadSample2}
                   sampleKey="fileInput2"
@@ -184,7 +175,7 @@ function App() {
                 <button
                   className="btn btn-primary btn-lg mt-4"
                   onClick={() => setShowComparison(true)}
-                  disabled={!file1Data || !file2Data}
+                  disabled={!file1Loaded || !file2Loaded}
                 >
                   Compare Activities
                 </button>
