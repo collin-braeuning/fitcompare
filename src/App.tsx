@@ -7,7 +7,7 @@ import EChartsComponent from './components/EChartsComponent'
 import { useFitFileLoader } from './hooks/useFitFileLoader'
 import { useGraphData } from './hooks/useGraphData'
 import { useCorrelation } from './hooks/useCorrelation'
-import type { FileData, GraphDataPoint } from './types/fitTypes'
+import type { FileData } from './types/fitTypes'
 
 function App() {
   const [file1Data, setFile1Data] = useState<FileData | null>(null)
@@ -144,6 +144,8 @@ function App() {
                     setFile2Data(null)
                     setShowComparison(false)
                     resetZoom()
+                    resetFile1()
+                    resetFile2()
                   }}
                 >
                   Upload Different Files
