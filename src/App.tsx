@@ -1,236 +1,13 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import './App.css'
-import FitParser from 'fit-file-parser'
-import { parseFitData, type SimplifiedFitData, type SimplifiedActivity, type SimplifiedLapRecord } from './utils/fitDataParser'
-import * as echarts from 'echarts'
-import { calculateCorrelation, findMatchingDataPoints } from './utils/correlation'
-
-const sampleUrls = import.meta.glob('/data/*.{fit,FIT}', {
-  eager: true,
-  query: '?url',
-  import: 'default',
-}) as Record<string, string>
-
-const SAMPLES = Object.entries(sampleUrls).map(([path, url]) => ({
-  name: path.split('/').pop()!.replace(/\.[^/.]+$/, ''),
-    url,
-}))
-.sort((a, b) => b.name.localeCompare(a.name)) // more recent dates float to top
-
-interface FileData {
-  fileName: string
-  activity: SimplifiedActivity
-}
-
-interface GraphDataPoint {
-  timestamp: string
-  [key: string]: string | number
-}
-
-interface EChartsComponentProps {
-  data: GraphDataPoint[]
-  zoomIndex: { startIndex: number; endIndex: number } | null
-  onZoomChange: (range: { startIndex: number; endIndex: number } | null) => void
-}
-
-const EChartsComponent: React.FC<EChartsComponentProps> = ({
-  data,
-  zoomIndex,
-  onZoomChange,
-}) => {
-  const chartRef = useRef<HTMLDivElement>(null)
-  const chartInstanceRef = useRef<echarts.ECharts | null>(null)
-
-  useEffect(() => {
-    if (!chartRef.current || data.length === 0) return
-
-    // Initialize chart
-    if (!chartInstanceRef.current) {
-      chartInstanceRef.current = echarts.init(chartRef.current, 'dark')
-    }
-
-    const chart = chartInstanceRef.current
-
-    //
-    //
-    //
-    //
-    const seriesNameSet = new Set<string>()
-    data.forEach((d) => {
-      Object.keys(d).forEach((key) => {
-        if (key !== 'timestamp') {
-          seriesNameSet.add(key)
-        }
-      })
-    })
-    const seriesNames: string[] = Array.from(seriesNameSet)
-
-    console.log('ECharts Data Debug:', {
-      dataLength: data.length,
-      seriesNames,
-      firstDataPoint: data[0],
-    })
-
-    // Validate data
-    if (seriesNames.length === 0 || data.length === 0) {
-      console.warn('No data to render:', { seriesNames, dataLength: data.length })
-      return
-    }
-
-    // Transform data for ECharts
-    const timestamps = data.map((d) => new Date(d.timestamp).toLocaleTimeString())
-    const seriesData = seriesNames.map((name) => data.map((d) => d[name] || null))
-
-    console.log('Series Data Lengths:', seriesData.map((s) => s.length))
-
-    // Build chart options
-    const options: echarts.EChartsOption = {
-      backgroundColor: 'rgba(10, 14, 39, 0)',
-      textStyle: {
-        color: '#bbb',
-      },
-      grid: {
-        top: '5%',
-        left: '2%',
-        right: '2%',
-        bottom: '20%',
-        containLabel: true,
-      },
-      tooltip: {
-        trigger: 'axis',
-        backgroundColor: '#1a1f3a',
-        borderColor: '#ff6b35',
-        borderWidth: 2,
-        textStyle: {
-          color: '#fff',
-        },
-      },
-      legend: {
-        data: seriesNames,
-        textStyle: {
-          color: '#bbb',
-        },
-        bottom: 50,
-        itemStyle: {
-          // hides the dots in the legend
-          color: 'transparent', 
-          borderColor: 'transparent' 
-        },
-      },
-      xAxis: {
-        type: 'category',
-        data: timestamps,
-        axisLine: {
-          lineStyle: {
-            color: '#444',
-          },
-        },
-        axisLabel: {
-          color: '#bbb',
-          interval: Math.max(0, Math.floor(data.length / 12)),
-          rotate: -45,
-        },
-      },
-      yAxis: {
-        type: 'value',
-        scale: true,
-        name: 'Heart Rate (bpm)',
-        nameTextStyle: {
-          color: '#bbb',
-          fontSize: 12,
-        },
-        nameLocation: 'middle',
-        nameGap: 40,
-        axisLine: {
-          lineStyle: {
-            color: '#444',
-          },
-        },
-        axisLabel: {
-          color: '#bbb',
-        },
-        splitLine: {
-          lineStyle: {
-            color: '#333',
-          },
-        },
-      },
-      dataZoom: [
-        {
-          type: 'slider',
-          show: true,
-          start: 0,
-          end: 100,
-          textStyle: {
-            color: '#bbb',
-          },
-          bottom: 20,
-        },
-      ],
-      series: seriesNames.map((name, index) => ({
-        name,
-        type: 'line',
-        data: seriesData[index],
-        lineStyle: {
-          color: index === 0 ? '#ff6b35' : '#3498db',
-          width: 2,
-        },
-        smooth: false,
-        symbol: 'none', // hide dots
-        itemStyle: {
-          color: index === 0 ? '#ff6b35' : '#3498db'  // Color of the dots
-        },
-        sampling: 'lttb',
-        connectNulls: false,
-      })),
-    }
-
-    chart.setOption(options)
-
-    // Handle zoom events
-    const handleDataZoom = () => {
-      const option = chart.getOption() as echarts.EChartsOption
-      const dataZoomOption = (option.dataZoom as echarts.DataZoomComponentOption[]) || []
-
-      if (dataZoomOption.length > 0) {
-        const start = (dataZoomOption[0].start as number) || 0
-        const end = (dataZoomOption[0].end as number) || 100
-
-        const startIndex = Math.floor((start / 100) * data.length)
-        const endIndex = Math.floor((end / 100) * data.length) - 1
-
-        if (startIndex === 0 && endIndex === data.length - 1) {
-          onZoomChange(null)
-        } else {
-          onZoomChange({ startIndex, endIndex })
-        }
-      }
-    }
-
-    chart.on('datazoom', handleDataZoom)
-
-    // Handle window resize
-    const handleResize = () => {
-      chart.resize()
-    }
-
-    window.addEventListener('resize', handleResize)
-
-    return () => {
-      window.removeEventListener('resize', handleResize)
-      chart.off('datazoom', handleDataZoom)
-    }
-  }, [data, onZoomChange])
-
-  useEffect(() => {
-    const chart = chartInstanceRef.current
-    if(chart && zoomIndex === null) {
-      chart.dispatchAction({ type: 'dataZoom', start: 0, end: 100 })
-    }
-  }, [zoomIndex])
-
-  return <div ref={chartRef} className="echarts-container" />
-}
+import './components/FileUploadCard.css'
+import './components/ActivityComparisonTable.css'
+import './components/GraphCard.css'
+import EChartsComponent from './components/EChartsComponent'
+import { useFitFileLoader } from './hooks/useFitFileLoader'
+import { useGraphData } from './hooks/useGraphData'
+import { useCorrelation } from './hooks/useCorrelation'
+import type { FileData, GraphDataPoint } from './types/fitTypes'
 
 function App() {
   const [file1Data, setFile1Data] = useState<FileData | null>(null)
@@ -238,152 +15,26 @@ function App() {
   const [showComparison, setShowComparison] = useState(false)
   const [zoomIndex, setZoomIndex] = useState<{ startIndex: number; endIndex: number } | null>(null)
 
-  const loadActivity = (buffer: ArrayBuffer, name: string, setData: (data: FileData) => void) => {
-    const fitParser = new FitParser({
-      force: true,
-      speedUnit: 'km/h',
-      lengthUnit: 'km',
-      temperatureUnit: 'celsius',
-      pressureUnit: 'bar',
-      elapsedRecordField: true,
-      mode: 'cascade',
-    })
+  const { data: file1Loaded, parseFile: parseFile1, loadSample: loadSample1, reset: resetFile1 } = useFitFileLoader()
+  const { data: file2Loaded, parseFile: parseFile2, loadSample: loadSample2, reset: resetFile2 } = useFitFileLoader()
 
+  // Sync loaded data with local state
+  if (file1Loaded && file1Data !== file1Loaded) setFile1Data(file1Loaded)
+  if (file2Loaded && file2Data !== file2Loaded) setFile2Data(file2Loaded)
 
-    fitParser.parse(buffer, (error: Error | null, data: unknown) => {
-      if (error) {
-        console.error('Error parsing FIT file:', error)
-        alert(`Error parsing file: ${error.message}`)
-      } else {
-        try {
-          const simplifiedData: SimplifiedFitData = parseFitData(data)
-          if (simplifiedData.activities.length > 0) {
-            setData({
-              fileName: name.replace(/\.[^/.]+$/, ''),
-              activity: simplifiedData.activities[0],
-            })
-          }
-        } catch (parseError) {
-          console.error('Error parsing simplified FIT data:', parseError)
-          alert('Error processing FIT data')
-        }
-      }
-    })
-  }
-  
-  const parseFile = (file: File, setData: (data: FileData) => void) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      loadActivity(e.target?.result as ArrayBuffer, file.name, setData)
-    }
-    reader.readAsArrayBuffer(file)
-  }
-
-  const loadSample = (sample: { name: string; url: string }, setData: (data: FileData) => void) => {
-    fetch(sample.url)
-      .then((r) => r.arrayBuffer())
-      .then((buf) => loadActivity(buf, sample.name, setData))
-      .catch((err) => {
-        console.error('Error loading sample: ', err)
-        alert('Error laoding sample file')
-      })
-  }
-
-  const handleFile1Upload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      parseFile(file, setFile1Data)
-    }
-  }
-
-  const handleFile2Upload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      parseFile(file, setFile2Data)
-    }
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString()
-  }
-
-  const getFileName = (name: string) => {
-    return name.replace(/\.[^/.]+$/, '')
-  }
-
-  const combinedGraphData = useMemo((): GraphDataPoint[] => {
-    if (!file1Data || !file2Data) return []
-
-    const file1Name = getFileName(file1Data.fileName)
-    const file2Name = getFileName(file2Data.fileName)
-    
-    // Create unique series names - if names are identical, append (1) and (2)
-    const series1Name = file1Name === file2Name ? `${file1Name} (1)` : file1Name
-    const series2Name = file1Name === file2Name ? `${file2Name} (2)` : file2Name
-    
-    const dataMap = new Map<number, GraphDataPoint>()
-
-    const mergeRecords = (records: SimplifiedLapRecord[], seriesName: string) => {
-      records.forEach((record) => {
-        const secondKey = Math.round(new Date(record.timestamp).getTime() / 1000)
-        let point = dataMap.get(secondKey)
-        if (!point) {
-          point = { timestamp: new Date(secondKey * 1000).toISOString() }
-          dataMap.set(secondKey, point)
-        }
-        point[seriesName] = record.heartRate || 0
-      })
-    }
-    
-    mergeRecords(file1Data.activity.records, series1Name)
-    mergeRecords(file2Data.activity.records, series2Name)
-
-    const allData = Array.from(dataMap.entries())
-      .sort((a,b) => a[0] - b[0])
-      .map(([, point]) => point)
-  
-      return allData
-  }, [file1Data, file2Data])
+  const { combinedGraphData } = useGraphData(file1Data, file2Data)
+  const { correlationData, getCorrelationColor } = useCorrelation(file1Data, file2Data, combinedGraphData)
 
   const handleZoomChange = useCallback((range: { startIndex: number; endIndex: number } | null) => {
     setZoomIndex(range)
   }, [])
 
-  const correlationData = useMemo(() => {
-    if (!file1Data || !file2Data || combinedGraphData.length === 0) return null
-
-    const file1Name = getFileName(file1Data.fileName)
-    const file2Name = getFileName(file2Data.fileName)
-    const series1Name = file1Name === file2Name ? `${file1Name} (1)` : file1Name
-    const series2Name = file1Name === file2Name ? `${file2Name} (2)` : file2Name
-
-    const file1Values: number[] = []
-    const file2Values: number[] = []
-
-    for (const point of combinedGraphData) {
-      const hr1 = point[series1Name] as number
-      const hr2 = point[series2Name] as number
-      if (hr1 && hr2 && hr1 !== 0 && hr2 !== 0) {
-        file1Values.push(hr1)
-        file2Values.push(hr2)
-      }
-    }
-
-    if (file1Values.length < 2) return null
-
-    const r = calculateCorrelation(file1Values, file2Values)
-    return { r, matchingPoints: file1Values.length }
-  }, [file1Data, file2Data, combinedGraphData])
-
   const resetZoom = () => {
     setZoomIndex(null)
   }
 
-  const getCorrelationColor = (r: number): string => {
-    const absR = Math.abs(r)
-    if (absR >= 0.7) return 'correlation-high'
-    if (absR >= 0.4) return 'correlation-medium'
-    return 'correlation-low'
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString()
   }
 
   return (
@@ -505,91 +156,23 @@ function App() {
           <div className="upload-section">
             <div className="row">
               <div className="col-lg-6 mb-4">
-                <div className="upload-card">
-                  <div className="upload-icon">📁</div>
-                  <h4>File 1</h4>
-                  {file1Data ? (
-                    <div className="file-info">
-                      <p className="file-name">✓ {file1Data.fileName}</p>
-                      <p className="file-sport">{file1Data.activity.sport}</p>
-                    </div>
-                  ) : (
-                    <>
-                      <label htmlFor="fileInput1" className="form-label">
-                        Upload First FIT File
-                      </label>
-                      <input
-                        type="file"
-                        className="form-control form-control-lg"
-                        id="fileInput1"
-                        onChange={handleFile1Upload}
-                        accept=".fit"
-                      />
-                      {SAMPLES.length > 0 && (
-                        <>
-                          <span className="upload-or">or</span>
-                          <select 
-                            className="form-control sample-select"
-                            defaultValue=""
-                            onChange={(e) => {
-                              const s = SAMPLES.find((s) => s.name === e.target.value)
-                              if (s) loadSample(s, setFile1Data)
-                            }}
-                        >
-                            <option value="" disabled>Load a sample activity...</option>
-                            {SAMPLES.map((s) => (
-                              <option key={s.name} value={s.name}>{s.name}</option>
-                            ))}
-                          </select>
-                        </>
-                      )}
-                    </>
-                  )}
-                </div>
+                <UploadCard
+                  label="File 1"
+                  data={file1Data}
+                  onFileChange={parseFile1}
+                  onSampleChange={loadSample1}
+                  sampleKey="fileInput1"
+                />
               </div>
 
               <div className="col-lg-6 mb-4">
-                <div className="upload-card">
-                  <div className="upload-icon">📁</div>
-                  <h4>File 2</h4>
-                  {file2Data ? (
-                    <div className="file-info">
-                      <p className="file-name">✓ {file2Data.fileName}</p>
-                      <p className="file-sport">{file2Data.activity.sport}</p>
-                    </div>
-                  ) : (
-                    <>
-                      <label htmlFor="fileInput2" className="form-label">
-                        Upload Second FIT File
-                      </label>
-                      <input
-                        type="file"
-                        className="form-control form-control-lg"
-                        id="fileInput2"
-                        onChange={handleFile2Upload}
-                        accept=".fit"
-                      />
-                      {SAMPLES.length > 0 && (
-                        <>
-                          <span className="upload-or">or</span>
-                          <select 
-                            className="form-control sample-select"
-                            defaultValue=""
-                            onChange={(e) => {
-                              const s = SAMPLES.find((s) => s.name === e.target.value)
-                              if (s) loadSample(s, setFile2Data)
-                            }}
-                        >
-                            <option value="" disabled>Load a sample activity...</option>
-                            {SAMPLES.map((s) => (
-                              <option key={s.name} value={s.name}>{s.name}</option>
-                            ))}
-                          </select>
-                        </>
-                      )}
-                    </>
-                  )}
-                </div>
+                <UploadCard
+                  label="File 2"
+                  data={file2Data}
+                  onFileChange={parseFile2}
+                  onSampleChange={loadSample2}
+                  sampleKey="fileInput2"
+                />
               </div>
             </div>
 
@@ -609,6 +192,79 @@ function App() {
         )}
       </div>
     </>
+  )
+}
+
+// Inline UploadCard component (defined here to avoid extra file, uses its own CSS)
+interface UploadCardProps {
+  label: string
+  data: FileData | null
+  onFileChange: (file: File) => void
+  onSampleChange: (sample: { name: string; url: string }) => void
+  sampleKey: string
+}
+
+const SAMPLES = import.meta.glob('/data/*.{fit,FIT}', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+}) as Record<string, string>
+
+const sampleList = Object.entries(SAMPLES)
+  .map(([path, url]) => ({
+    name: path.split('/').pop()!.replace(/\.[^/.]+$/, ''),
+    url,
+  }))
+  .sort((a, b) => b.name.localeCompare(a.name))
+
+function UploadCard({ label, data, onFileChange, onSampleChange, sampleKey }: UploadCardProps) {
+  const handleSampleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const s = sampleList.find((s) => s.name === e.target.value)
+    if (s) onSampleChange(s)
+  }
+
+  return (
+    <div className="upload-card">
+      <div className="upload-icon">&#128193;</div>
+      <h4>{label}</h4>
+      {data ? (
+        <div className="file-info">
+          <p className="file-name">&#10003; {data.fileName}</p>
+          <p className="file-sport">{data.activity.sport}</p>
+        </div>
+      ) : (
+        <>
+          <label htmlFor={sampleKey} className="form-label">
+            Upload {label} FIT File
+          </label>
+          <input
+            type="file"
+            className="form-control form-control-lg"
+            id={sampleKey}
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) onFileChange(file)
+            }}
+            accept=".fit"
+          />
+          {sampleList.length > 0 && (
+            <>
+              <span className="upload-or">or</span>
+              <select
+                className="form-control sample-select"
+                defaultValue=""
+                onChange={handleSampleChange}
+              >
+                <option value="" disabled>Load a sample activity...</option>
+                {sampleList.map((s) => (
+                  <option key={s.name} value={s.name}>{s.name}</option>
+                ))}
+              </select>
+            </>
+          )}
+        </>
+      )}
+    </div>
   )
 }
 

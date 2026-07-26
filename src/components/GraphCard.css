@@ -1,0 +1,41 @@
+/* Graph Card */
+.graph-card {
+  background: linear-gradient(135deg, #1a1f3a 0%, #2d2e4f 100%);
+  padding: 1.5rem 1rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  color: white;
+  border-top: 3px solid #ff6b35;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.graph-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.graph-card h5 {
+  margin: 0;
+  color: #ff6b35;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.btn-small {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
+.btn-reset {
+  background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%);
+  color: white;
+}
+
+.btn-reset:hover {
+  background: linear-gradient(135deg, #ff9500 0%, #ff7c00 100%);
+}

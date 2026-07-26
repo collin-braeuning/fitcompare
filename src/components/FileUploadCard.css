@@ -1,0 +1,95 @@
+/* Upload Card */
+.upload-card {
+  background: linear-gradient(135deg, #1a1f3a 0%, #2d2e4f 100%);
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 2px dashed #ff6b35;
+  transition: all 0.3s ease;
+  text-align: center;
+  position: relative;
+  min-height: 250px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+}
+
+.upload-card:hover {
+  border-color: #ffa500;
+  transform: translateY(-4px);
+}
+
+.upload-card h4 {
+  margin: 0.5rem 0 1rem 0;
+  color: #ff6b35;
+  font-weight: 800;
+  font-size: 1.25rem;
+  text-transform: uppercase;
+}
+
+.upload-icon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.upload-card .form-label {
+  font-weight: 700;
+  color: #bbb;
+  margin-bottom: 1rem;
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* File Info (after upload) */
+.file-info {
+  text-align: center;
+}
+
+.file-name {
+  margin: 0.5rem 0;
+  color: #ff6b35;
+  font-weight: 800;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+}
+
+.file-sport {
+  margin: 0.5rem 0;
+  color: #ffa500;
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Sample Select */
+.sample-select {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 2px solid #ff6b35;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #333;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.sample-select:focus {
+  border-color: #ffa500;
+  box-shadow: 0 0 0 0.3rem rgba(255, 107, 53, 0.2);
+  outline: none;
+}
+
+/* Responsive Upload Card */
+@media (max-width: 768px) {
+  .upload-card {
+    min-height: 200px;
+  }
+
+  .upload-icon {
+    font-size: 2rem;
+  }
+}
