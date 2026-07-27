@@ -1,4 +1,4 @@
-name: CI — Build Check
+name: CI Checks
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: Build Check
+    name: Build
 
     steps:
       - name: Checkout
