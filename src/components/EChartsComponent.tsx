@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback } from 'react'
 import * as echarts from 'echarts'
 import type { EChartsComponentProps } from '../types/fitTypes'
 import './EChartsComponent.css'
+import { CHART_COLORS } from '../utils/chartColors'
 
 const EChartsComponent: React.FC<EChartsComponentProps> = ({
   data,
@@ -56,9 +57,9 @@ const EChartsComponent: React.FC<EChartsComponentProps> = ({
 
     // Build chart options
     const options: echarts.EChartsOption = {
-      backgroundColor: 'rgba(10, 14, 39, 0)',
+      backgroundColor: CHART_COLORS.background,
       textStyle: {
-        color: '#bbb',
+        color: CHART_COLORS.text,
       },
       grid: {
         top: '5%',
@@ -69,17 +70,17 @@ const EChartsComponent: React.FC<EChartsComponentProps> = ({
       },
       tooltip: {
         trigger: 'axis',
-        backgroundColor: '#1a1f3a',
-        borderColor: '#ff6b35',
+        backgroundColor: CHART_COLORS.tooltip.background,
+        borderColor: CHART_COLORS.tooltip.border,
         borderWidth: 2,
         textStyle: {
-          color: '#fff',
+          color: CHART_COLORS.tooltip.text,
         },
       },
       legend: {
         data: seriesNames,
         textStyle: {
-          color: '#bbb',
+          color: CHART_COLORS.text,
         },
         bottom: 50,
         itemStyle: {
@@ -92,11 +93,11 @@ const EChartsComponent: React.FC<EChartsComponentProps> = ({
         data: timestamps,
         axisLine: {
           lineStyle: {
-            color: '#444',
+            color: CHART_COLORS.axisLine,
           },
         },
         axisLabel: {
-          color: '#bbb',
+          color: CHART_COLORS.text,
           interval: Math.max(0, Math.floor(data.length / 12)),
           rotate: -45,
         },
@@ -106,22 +107,22 @@ const EChartsComponent: React.FC<EChartsComponentProps> = ({
         scale: true,
         name: 'Heart Rate (bpm)',
         nameTextStyle: {
-          color: '#bbb',
+          color: CHART_COLORS.text,
           fontSize: 12,
         },
         nameLocation: 'middle',
         nameGap: 40,
         axisLine: {
           lineStyle: {
-            color: '#444',
+            color: CHART_COLORS.axisLine,
           },
         },
         axisLabel: {
-          color: '#bbb',
+          color: CHART_COLORS.text,
         },
         splitLine: {
           lineStyle: {
-            color: '#333',
+            color: CHART_COLORS.splitLine,
           },
         },
       },
@@ -132,7 +133,7 @@ const EChartsComponent: React.FC<EChartsComponentProps> = ({
           start: 0,
           end: 100,
           textStyle: {
-            color: '#bbb',
+            color: CHART_COLORS.text,
           },
           bottom: 20,
         },
@@ -142,13 +143,13 @@ const EChartsComponent: React.FC<EChartsComponentProps> = ({
         type: 'line',
         data: seriesData[index],
         lineStyle: {
-          color: index === 0 ? '#ff6b35' : '#3498db',
+          color: index === 0 ? CHART_COLORS.series.accent : CHART_COLORS.series.default,
           width: 2,
         },
         smooth: false,
         symbol: 'none',
         itemStyle: {
-          color: index === 0 ? '#ff6b35' : '#3498db',
+          color: index === 0 ? CHART_COLORS.series.accent : CHART_COLORS.series.default,
         },
         sampling: 'lttb',
         connectNulls: false,
