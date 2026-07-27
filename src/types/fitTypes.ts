@@ -1,4 +1,4 @@
-import type { SimplifiedActivity, SimplifiedLapRecord } from '../utils/fitDataParser'
+import type { SimplifiedActivity } from '../utils/fitDataParser'
 
 export interface FileData {
   fileName: string
