@@ -143,6 +143,8 @@ const EChartsComponent: React.FC<ExtendedEChartsComponentProps> = ({
           },
           nameLocation: 'middle',
           nameGap: 40,
+          min: 'dataMin',
+          max: 'dataMax',
           axisLine: {
             lineStyle: {
               color: CHART_COLORS.axisLine,
