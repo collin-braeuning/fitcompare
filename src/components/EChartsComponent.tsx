@@ -37,25 +37,71 @@ const EChartsComponent: React.FC<EChartsComponentProps> = ({
     })
     const seriesNames: string[] = Array.from(seriesNameSet)
 
-    console.log('ECharts Data Debug:', {
-      dataLength: data.length,
-      seriesNames,
-      firstDataPoint: data[0],
+    // Separate pace series from heart rate series
+    const paceSeries: string[] = []
+    const hrSeries: string[] = []
+    seriesNames.forEach((name) => {
+      if (name.endsWith(' Pace')) {
+        paceSeries.push(name)
+      } else {
+        hrSeries.push(name)
+      }
     })
 
     // Validate data
-    if (seriesNames.length === 0 || data.length === 0) {
-      console.warn('No data to render:', { seriesNames, dataLength: data.length })
+    if (hrSeries.length === 0 || data.length === 0) {
+      console.warn('No HR data to render:', { seriesNames, dataLength: data.length })
       return
     }
 
     // Transform data for ECharts
     const timestamps = data.map((d) => new Date(d.timestamp).toLocaleTimeString())
-    const seriesData = seriesNames.map((name) => data.map((d) => d[name] || null))
 
-    console.log('Series Data Lengths:', seriesData.map((s) => s.length))
+    // Build HR series data (first Y-axis)
+    const hrSeriesData = hrSeries.map((name) => data.map((d) => d[name] || null))
+
+    // Build pace series data (second Y-axis, inverted)
+    const paceSeriesData = paceSeries.map((name) => data.map((d) => d[name] ?? null))
 
     // Build chart options
+    const optionAxes: echarts.SeriesOption[] = hrSeries.map((name, index) => ({
+      name,
+      type: 'line',
+      yAxisIndex: 0,
+      data: hrSeriesData[index],
+      lineStyle: {
+        color: index === 0 ? CHART_COLORS.series.accent : CHART_COLORS.series.default,
+        width: 2,
+      },
+      smooth: false,
+      symbol: 'none',
+      itemStyle: {
+        color: index === 0 ? CHART_COLORS.series.accent : CHART_COLORS.series.default,
+      },
+      sampling: 'lttb',
+      connectNulls: false,
+    }))
+
+    // Add pace series with inverted Y-axis
+    const paceAxisOptions: echarts.SeriesOption[] = paceSeries.map((name, index) => ({
+      name,
+      type: 'line',
+      yAxisIndex: 1,
+      data: paceSeriesData[index],
+      lineStyle: {
+        color: '#2ecc71',
+        width: 2,
+        type: 'dashed',
+      },
+      smooth: false,
+      symbol: 'none',
+      itemStyle: {
+        color: '#2ecc71',
+      },
+      sampling: 'lttb',
+      connectNulls: false,
+    }))
+
     const options: echarts.EChartsOption = {
       backgroundColor: CHART_COLORS.background,
       textStyle: {
@@ -64,7 +110,7 @@ const EChartsComponent: React.FC<EChartsComponentProps> = ({
       grid: {
         top: '5%',
         left: '2%',
-        right: '2%',
+        right: '15%',
         bottom: '20%',
         containLabel: true,
       },
@@ -88,44 +134,77 @@ const EChartsComponent: React.FC<EChartsComponentProps> = ({
           borderColor: 'transparent',
         },
       },
-      xAxis: {
-        type: 'category',
-        data: timestamps,
-        axisLine: {
-          lineStyle: {
-            color: CHART_COLORS.axisLine,
+      xAxis: [
+        {
+          type: 'category',
+          data: timestamps,
+          axisLine: {
+            lineStyle: {
+              color: CHART_COLORS.axisLine,
+            },
+          },
+          axisLabel: {
+            color: CHART_COLORS.text,
+            interval: Math.max(0, Math.floor(data.length / 12)),
+            rotate: -45,
           },
         },
-        axisLabel: {
-          color: CHART_COLORS.text,
-          interval: Math.max(0, Math.floor(data.length / 12)),
-          rotate: -45,
-        },
-      },
-      yAxis: {
-        type: 'value',
-        scale: true,
-        name: 'Heart Rate (bpm)',
-        nameTextStyle: {
-          color: CHART_COLORS.text,
-          fontSize: 12,
-        },
-        nameLocation: 'middle',
-        nameGap: 40,
-        axisLine: {
-          lineStyle: {
-            color: CHART_COLORS.axisLine,
+      ],
+      yAxis: [
+        {
+          type: 'value',
+          scale: true,
+          name: 'Heart Rate (bpm)',
+          nameTextStyle: {
+            color: CHART_COLORS.text,
+            fontSize: 12,
+          },
+          nameLocation: 'middle',
+          nameGap: 40,
+          axisLine: {
+            lineStyle: {
+              color: CHART_COLORS.axisLine,
+            },
+          },
+          axisLabel: {
+            color: CHART_COLORS.text,
+          },
+          splitLine: {
+            lineStyle: {
+              color: CHART_COLORS.splitLine,
+            },
           },
         },
-        axisLabel: {
-          color: CHART_COLORS.text,
-        },
-        splitLine: {
-          lineStyle: {
-            color: CHART_COLORS.splitLine,
+        {
+          type: 'value',
+          scale: true,
+          inverse: true,
+          name: 'Pace (min/km)',
+          nameTextStyle: {
+            color: '#2ecc71',
+            fontSize: 12,
+          },
+          nameLocation: 'middle',
+          nameGap: 40,
+          position: 'right',
+          axisLine: {
+            lineStyle: {
+              color: '#2ecc71',
+            },
+          },
+          axisLabel: {
+            color: '#2ecc71',
+            formatter: (value: number) => {
+              const mins = Math.floor(value)
+              const secs = Math.round((value - mins) * 60)
+              return `${mins}:${secs.toString().padStart(2, '0')}`
+            },
+          },
+          splitLine: {
+            show: false,
           },
         },
-      },
+      ],
       dataZoom: [
         {
           type: 'slider',
@@ -138,22 +217,7 @@ const EChartsComponent: React.FC<EChartsComponentProps> = ({
           bottom: 20,
         },
       ],
-      series: seriesNames.map((name, index) => ({
-        name,
-        type: 'line',
-        data: seriesData[index],
-        lineStyle: {
-          color: index === 0 ? CHART_COLORS.series.accent : CHART_COLORS.series.default,
-          width: 2,
-        },
-        smooth: false,
-        symbol: 'none',
-        itemStyle: {
-          color: index === 0 ? CHART_COLORS.series.accent : CHART_COLORS.series.default,
-        },
-        sampling: 'lttb',
-        connectNulls: false,
-      })),
+      series: [...optionAxes, ...paceAxisOptions],
     }
 
     chart.setOption(options)

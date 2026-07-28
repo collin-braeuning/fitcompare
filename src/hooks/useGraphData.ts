@@ -7,14 +7,18 @@ export function useGraphData(file1Loaded: FileData | null, file2Loaded: FileData
 
     const file1Name = file1Loaded.fileName.replace(/\.[^/.]+$/, '')
     const file2Name = file2Loaded.fileName.replace(/\.[^/.]+$/, '')
-    
-    // Create unique series names - if names are identical, append (1) and (2)
+
+    // Create unique series names
     const series1Name = file1Name === file2Name ? `${file1Name} (1)` : file1Name
     const series2Name = file1Name === file2Name ? `${file2Name} (2)` : file2Name
-    
+
     const dataMap = new Map<number, GraphDataPoint>()
 
-    const mergeRecords = (records: typeof file1Loaded.activity.records, seriesName: string) => {
+    const mergeRecords = (
+      records: typeof file1Loaded.activity.records,
+      seriesName: string,
+      includePace: boolean,
+    ) => {
       records.forEach((record) => {
         const secondKey = Math.round(new Date(record.timestamp).getTime() / 1000)
         let point = dataMap.get(secondKey)
@@ -23,16 +27,23 @@ export function useGraphData(file1Loaded: FileData | null, file2Loaded: FileData
           dataMap.set(secondKey, point)
         }
         point[seriesName] = record.heartRate || 0
+
+        if (includePace && record.speed && record.speed > 0) {
+          // Pace in min/km = 60 / speed (km/h)
+          const pace = 60 / record.speed
+          const paceKey = `${seriesName} Pace`
+          point[paceKey] = pace
+        }
       })
     }
-    
-    mergeRecords(file1Loaded.activity.records, series1Name)
-    mergeRecords(file2Loaded.activity.records, series2Name)
+
+    mergeRecords(file1Loaded.activity.records, series1Name, true)
+    mergeRecords(file2Loaded.activity.records, series2Name, false)
 
     const allData = Array.from(dataMap.entries())
       .sort((a, b) => a[0] - b[0])
       .map(([, point]) => point)
-  
+
     return allData
   }, [file1Loaded, file2Loaded])
 
