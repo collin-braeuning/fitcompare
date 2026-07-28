@@ -96,7 +96,9 @@ function App() {
                         <td className="data-cell">
                           {computeAvgPace(file1Loaded.activity.records)}
                         </td>
-                        <td className="data-cell">—</td>
+                        <td className="data-cell">
+                          {computeAvgPace(file2Loaded.activity.records)}
+                        </td>
                       </tr>
                       <tr>
                         <td className="label-cell">Laps</td>
@@ -135,6 +137,7 @@ function App() {
                     data={combinedGraphData}
                     zoomIndex={zoomIndex}
                     onZoomChange={handleZoomChange}
+                    laps={file1Loaded.activity.laps}
                   />
                 </div>
               </div>

@@ -1,13 +1,18 @@
 import { useRef, useEffect, useCallback } from 'react'
 import * as echarts from 'echarts'
-import type { EChartsComponentProps } from '../types/fitTypes'
+import type { EChartsComponentProps, SimplifiedLapData } from '../types/fitTypes'
 import './EChartsComponent.css'
 import { CHART_COLORS } from '../utils/chartColors'
 
-const EChartsComponent: React.FC<EChartsComponentProps> = ({
+interface ExtendedEChartsComponentProps extends EChartsComponentProps {
+  laps?: SimplifiedLapData[]
+}
+
+const EChartsComponent: React.FC<ExtendedEChartsComponentProps> = ({
   data,
   zoomIndex,
   onZoomChange,
+  laps,
 }) => {
   const chartRef = useRef<HTMLDivElement>(null)
   const chartInstanceRef = useRef<echarts.ECharts | null>(null)
@@ -218,6 +223,50 @@ const EChartsComponent: React.FC<EChartsComponentProps> = ({
         },
       ],
       series: [...optionAxes, ...paceAxisOptions],
+    }
+
+    // Add vertical lap lines as markLine on the x-axis
+    if (laps && laps.length > 0) {
+      // Build a timestamp-to-index map for the x-axis
+      const tsToIndex = new Map<string, number>()
+      data.forEach((d, i) => {
+        tsToIndex.set(d.timestamp, i)
+      })
+
+      const lapMarkLines = laps.map((lap, idx) => {
+        // Find the closest data point index for this lap's start time
+        const lapDate = new Date(lap.startTime).toISOString()
+        const index = tsToIndex.get(lapDate) ?? -1
+        if (index < 0) return null
+        return {
+          xAxis: index,
+          lineStyle: {
+            color: '#f39c12',
+            width: 1,
+            type: 'dotted',
+          },
+          label: {
+            show: idx === 0, // show label only on first lap to avoid clutter
+            formatter: `Lap ${idx + 1}`,
+            color: '#f39c12',
+          },
+        }
+      }).filter(Boolean)
+
+      if (lapMarkLines.length > 0) {
+        // Use echarts 'any' to bypass type limitations for markLine on xAxis
+        const xAxisWithLaps = [
+          ...((options.xAxis as any[]) ?? []),
+        ]
+        if (xAxisWithLaps[0]) {
+          (xAxisWithLaps[0] as any).markLine = {
+            data: lapMarkLines,
+            silent: true,
+            animation: false,
+          }
+        }
+        ;(options as any).xAxis = xAxisWithLaps
+      }
     }
 
     chart.setOption(options)
