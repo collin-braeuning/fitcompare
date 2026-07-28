@@ -1,6 +1,6 @@
 import { useRef, useEffect, useCallback } from 'react'
 import * as echarts from 'echarts'
-import type { EChartsComponentProps, SimplifiedLapData } from '../types/fitTypes'
+import type { EChartsComponentProps, SimplifiedLapData, GraphDataPoint } from '../types/fitTypes'
 import './EChartsComponent.css'
 import { CHART_COLORS } from '../utils/chartColors'
 
@@ -107,6 +107,38 @@ const EChartsComponent: React.FC<ExtendedEChartsComponentProps> = ({
       connectNulls: false,
     }))
 
+    // Extract lap line markLine configuration
+    const getLapLinesMarkLine = (
+      laps: SimplifiedLapData[],
+      dataPoints: GraphDataPoint[],
+      hrSeriesData: (string | number | null)[][],
+      timestamps: string[],
+    ): any[] | undefined => {
+      const tsToIndex = new Map<string, number>()
+      dataPoints.forEach((d: GraphDataPoint, i: number) => {
+        tsToIndex.set(d.timestamp, i)
+      })
+
+      const hrValues = (hrSeriesData[0] as (number | null)[]).filter((v): v is number => v != null)
+      const yMin = hrValues.length > 0 ? Math.min(...hrValues) : 0
+      const yMax = hrValues.length > 0 ? Math.max(...hrValues) : 100
+
+      const lapMarkLines: any[][] = []
+      laps.forEach((lap) => {
+        const lapDate = new Date(lap.startTime).toISOString()
+        const index = tsToIndex.get(lapDate)
+        if (index === undefined) return
+        const categoryLabel = timestamps[index]
+        if (!categoryLabel) return
+        lapMarkLines.push([
+          { xAxis: categoryLabel, yAxis: yMin },
+          { xAxis: categoryLabel, yAxis: yMax },
+        ])
+      })
+
+      return lapMarkLines.length > 0 ? lapMarkLines : undefined
+    }
+
     const options: echarts.EChartsOption = {
       backgroundColor: CHART_COLORS.background,
       textStyle: {
@@ -114,8 +146,8 @@ const EChartsComponent: React.FC<ExtendedEChartsComponentProps> = ({
       },
       grid: {
         top: '5%',
-        left: '2%',
-        right: '15%',
+        left: '4%',
+        right: '4%',
         bottom: '20%',
         containLabel: true,
       },
@@ -225,47 +257,21 @@ const EChartsComponent: React.FC<ExtendedEChartsComponentProps> = ({
       series: [...optionAxes, ...paceAxisOptions],
     }
 
-    // Add vertical lap lines as markLine on the x-axis
+    // Add vertical lap lines as markLine on the first HR series
     if (laps && laps.length > 0) {
-      // Build a timestamp-to-index map for the x-axis
-      const tsToIndex = new Map<string, number>()
-      data.forEach((d, i) => {
-        tsToIndex.set(d.timestamp, i)
-      })
-
-      const lapMarkLines = laps.map((lap, idx) => {
-        // Find the closest data point index for this lap's start time
-        const lapDate = new Date(lap.startTime).toISOString()
-        const index = tsToIndex.get(lapDate) ?? -1
-        if (index < 0) return null
-        return {
-          xAxis: index,
+      const lapMarkLines = getLapLinesMarkLine(laps, data, hrSeriesData, timestamps)
+      if (lapMarkLines && optionAxes.length > 0) {
+        (optionAxes[0] as any).markLine = {
+          data: lapMarkLines,
           lineStyle: {
-            color: '#f39c12',
+            color: 'rgba(200, 200, 200, 0.4)',
             width: 1,
-            type: 'dotted',
+            type: 'solid',
           },
-          label: {
-            show: idx === 0, // show label only on first lap to avoid clutter
-            formatter: `Lap ${idx + 1}`,
-            color: '#f39c12',
-          },
+          silent: true,
+          animation: false,
+          label: { show: false },
         }
-      }).filter(Boolean)
-
-      if (lapMarkLines.length > 0) {
-        // Use echarts 'any' to bypass type limitations for markLine on xAxis
-        const xAxisWithLaps = [
-          ...((options.xAxis as any[]) ?? []),
-        ]
-        if (xAxisWithLaps[0]) {
-          (xAxisWithLaps[0] as any).markLine = {
-            data: lapMarkLines,
-            silent: true,
-            animation: false,
-          }
-        }
-        ;(options as any).xAxis = xAxisWithLaps
       }
     }
 
