@@ -62,10 +62,23 @@ const EChartsComponent: React.FC<ExtendedEChartsComponentProps> = ({
     // Transform data for ECharts
     const timestamps = data.map((d) => new Date(d.timestamp).toLocaleTimeString())
 
-    // Build heart rate data array (definitive heartRateData)
-    const heartRateData = hrSeries.flatMap((name) =>
-      data.map((d) => d[name] || null)
-    )
+    // Build heart rate series — one series per HR data source (one per device)
+    const heartRateSeriesConfiguration = hrSeries.map((name, index) => ({
+      name,
+      type: 'line' as const,
+      data: data.map((d) => d[name] || null),
+      xAxisIndex: 0,
+      yAxisIndex: 0,
+      smooth: false,
+      symbol: 'none',
+      lineStyle: {
+        color: CHART_COLORS.series[index],
+        width: 2,
+      },
+      itemStyle: {
+        color: CHART_COLORS.series[index],
+      },
+    }))
 
     // Build pace series data
     const paceSeriesData = paceSeries.map((name) =>
@@ -144,35 +157,35 @@ const EChartsComponent: React.FC<ExtendedEChartsComponentProps> = ({
             },
           },
         },
-        {
-          type: 'value',
-          scale: true,
-          inverse: true,
-          name: 'Pace (min/km)',
-          nameTextStyle: {
-            color: '#2ecc71',
-            fontSize: 12,
-          },
-          nameLocation: 'middle',
-          nameGap: 40,
-          position: 'right',
-          axisLine: {
-            lineStyle: {
-              color: '#2ecc71',
-            },
-          },
-          axisLabel: {
-            color: '#2ecc71',
-            formatter: (value: number) => {
-              const mins = Math.floor(value)
-              const secs = Math.round((value - mins) * 60)
-              return `${mins}:${secs.toString().padStart(2, '0')}`
-            },
-          },
-          splitLine: {
-            show: false,
-          },
-        },
+        // {
+        //   type: 'value',
+        //   scale: false,
+        //   inverse: true,
+        //   name: 'Pace (min/km)',
+        //   nameTextStyle: {
+        //     color: '#2ecc71',
+        //     fontSize: 12,
+        //   },
+        //   nameLocation: 'middle',
+        //   nameGap: 40,
+        //   position: 'right',
+        //   axisLine: {
+        //     lineStyle: {
+        //       color: '#2ecc71',
+        //     },
+        //   },
+        //   axisLabel: {
+        //     color: '#2ecc71',
+        //     formatter: (value: number) => {
+        //       const mins = Math.floor(value)
+        //       const secs = Math.round((value - mins) * 60)
+        //       return `${mins}:${secs.toString().padStart(2, '0')}`
+        //     },
+        //   },
+        //   splitLine: {
+        //     show: false,
+        //   },
+        // },
       ],
       dataZoom: [
         {
@@ -183,42 +196,27 @@ const EChartsComponent: React.FC<ExtendedEChartsComponentProps> = ({
           textStyle: {
             color: CHART_COLORS.text,
           },
-          bottom: 20,
         },
       ],
       series: [
-        {
-          name: 'Heart Rate',
-          type: 'line',
-          data: heartRateData,
-          xAxisIndex: 0,
-          yAxisIndex: 0,
-          smooth: false,
-          symbol: 'none',
-          lineStyle: {
-            color: CHART_COLORS.series.primary,
-            width: 2,
-          },
-          itemStyle: {
-            color: CHART_COLORS.series.primary,
-          },
-        },
-        {
-          name: 'Pace',
-          type: 'line',
-          data: paceSeriesData,
-          xAxisIndex: 0,
-          yAxisIndex: 1,
-          smooth: false,
-          symbol: 'none',
-          lineStyle: {
-            color: CHART_COLORS.series.secondary,
-            width: 2,
-          },
-          itemStyle: {
-            color: CHART_COLORS.series.secondary,
-          },
-        },
+        ...heartRateSeriesConfiguration,
+        // {
+        //   name: 'Pace',
+        //   type: 'line',
+        //   data: paceSeriesData[0] || [],
+        //   xAxisIndex: 0,
+        //   yAxisIndex: 1,
+        //   smooth: false,
+        //   symbol: 'none',
+        //   lineStyle: {
+        //     type: 'dotted',
+        //     color: CHART_COLORS.pace,
+        //     width: 1,
+        //   },
+        //   itemStyle: {
+        //     color: CHART_COLORS.pace,
+        //   },
+        // },
       ],
     }
 
