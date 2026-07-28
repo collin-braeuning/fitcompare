@@ -143,8 +143,9 @@ const EChartsComponent: React.FC<ExtendedEChartsComponentProps> = ({
           },
           nameLocation: 'middle',
           nameGap: 40,
-          min: 'dataMin',
-          max: 'dataMax',
+          // min: 'dataMin',
+          // max: 'dataMax',
+          scale: true,
           axisLine: {
             lineStyle: {
               color: CHART_COLORS.axisLine,
@@ -159,35 +160,35 @@ const EChartsComponent: React.FC<ExtendedEChartsComponentProps> = ({
             },
           },
         },
-        // {
-        //   type: 'value',
-        //   scale: false,
-        //   inverse: true,
-        //   name: 'Pace (min/km)',
-        //   nameTextStyle: {
-        //     color: '#2ecc71',
-        //     fontSize: 12,
-        //   },
-        //   nameLocation: 'middle',
-        //   nameGap: 40,
-        //   position: 'right',
-        //   axisLine: {
-        //     lineStyle: {
-        //       color: '#2ecc71',
-        //     },
-        //   },
-        //   axisLabel: {
-        //     color: '#2ecc71',
-        //     formatter: (value: number) => {
-        //       const mins = Math.floor(value)
-        //       const secs = Math.round((value - mins) * 60)
-        //       return `${mins}:${secs.toString().padStart(2, '0')}`
-        //     },
-        //   },
-        //   splitLine: {
-        //     show: false,
-        //   },
-        // },
+        {
+          type: 'value',
+          scale: false,
+          inverse: true,
+          name: 'Pace (min/km)',
+          nameTextStyle: {
+            color: '#2ecc71',
+            fontSize: 12,
+          },
+          nameLocation: 'middle',
+          nameGap: 40,
+          position: 'right',
+          axisLine: {
+            lineStyle: {
+              color: '#2ecc71',
+            },
+          },
+          axisLabel: {
+            color: '#2ecc71',
+            formatter: (value: number) => {
+              const mins = Math.floor(value)
+              const secs = Math.round((value - mins) * 60)
+              return `${mins}:${secs.toString().padStart(2, '0')}`
+            },
+          },
+          splitLine: {
+            show: false,
+          },
+        },
       ],
       dataZoom: [
         {
@@ -202,23 +203,23 @@ const EChartsComponent: React.FC<ExtendedEChartsComponentProps> = ({
       ],
       series: [
         ...heartRateSeriesConfiguration,
-        // {
-        //   name: 'Pace',
-        //   type: 'line',
-        //   data: paceSeriesData[0] || [],
-        //   xAxisIndex: 0,
-        //   yAxisIndex: 1,
-        //   smooth: false,
-        //   symbol: 'none',
-        //   lineStyle: {
-        //     type: 'dotted',
-        //     color: CHART_COLORS.pace,
-        //     width: 1,
-        //   },
-        //   itemStyle: {
-        //     color: CHART_COLORS.pace,
-        //   },
-        // },
+        {
+          name: 'Pace',
+          type: 'line',
+          data: paceSeriesData[0] || [],
+          xAxisIndex: 0,
+          yAxisIndex: 1,
+          smooth: false,
+          symbol: 'none',
+          lineStyle: {
+            type: 'dotted',
+            color: CHART_COLORS.pace,
+            width: 1,
+          },
+          itemStyle: {
+            color: CHART_COLORS.pace,
+          },
+        },
       ],
     }
 
