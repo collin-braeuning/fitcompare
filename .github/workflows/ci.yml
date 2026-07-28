@@ -21,8 +21,35 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm run test:run
-
       - name: Build (tsc -b && vite build)
         run: npm run build
+
+  parse-fit-tests:
+    runs-on: ubuntu-latest
+    name: Parse FIT Tests
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6.0.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v6.0.0
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run fitDataParser tests
+        run: npm run test:run src/utils/__tests__/fitDataParser.test.ts
+
+  # TODO: Add more test jobs here as needed, e.g.:
+  #   correlation-tests:
+  #     name: Correlation Tests
+  #     steps:
+  #       - uses: actions/checkout@v6.0.0
+  #       - uses: actions/setup-node@v6.0.0
+  #         with:
+  #           node-version: 20
+  #       - run: npm ci
+  #       - run: npm run test:run src/utils/__tests__/correlation.test.ts
