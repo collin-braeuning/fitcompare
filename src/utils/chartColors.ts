@@ -8,8 +8,8 @@ export const CHART_COLORS = {
     text: '#fff',
   },
   series: {
-    accent: '#ff6b35',
-    default: '#3498db',
+    primary: '#3498db',
+    secondary: '#ff6b35',
   },
   background: 'rgba(10, 14, 39, 0)',
 } as const
