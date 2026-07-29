@@ -1,6 +1,6 @@
 import { useRef, useEffect, useCallback } from 'react'
 import * as echarts from 'echarts'
-import type { EChartsComponentProps, SimplifiedLapData, GraphDataPoint } from '../types/fitTypes'
+import type { EChartsComponentProps, SimplifiedLapData } from '../types/fitTypes'
 import './EChartsComponent.css'
 import { CHART_COLORS } from '../utils/chartColors'
 
