@@ -136,43 +136,30 @@ const EChartsComponent: React.FC<ExtendedEChartsComponentProps> = ({
           color: CHART_COLORS.tooltip.text,
         },
         formatter: (params: unknown) => {
+          // ECharts passes `echarts.SymbolItem[]` — one item per series at the hovered x-axis point.
+          // Each item: { seriesName: string, value: number, marker: string, dataIndex: number, data: any }
+          // params[0] is the category/timestamp axis label; remaining items are HR & pace series.
           if (!Array.isArray(params)) return ''
-          
-          // Build a friendly time label from the first axis value
+
+          // Extract time label from the timestamp series or fallback to our pre-built array
           let timeLabel = ''
-          for (const p of params) {
-            if (p?.value && typeof p?.value === 'string' && (p.value.includes(':') || p.seriesName === 'timestamp')) {
-              timeLabel = p.value
-              break
-            }
-          }
-          // If we didn't get a time string, try to extract from the axis
-          if (!timeLabel && timestamps.length > 0) {
-            const first = params[0] as any
-            if (first?.dataIndex !== undefined) {
-              timeLabel = timestamps[first.dataIndex] || ''
-            }
+          const tsParam = params.find((p) => p?.seriesName === 'timestamp')
+          if (tsParam?.value && typeof tsParam.value === 'string') {
+            timeLabel = tsParam.value
+          } else if (tsParam?.dataIndex != null) {
+            timeLabel = timestamps[tsParam.dataIndex] || ''
           }
 
-          const lines: string[] = []
-          if (timeLabel) lines.push(`<strong>${timeLabel}</strong>`)
+          const lines: string[] = timeLabel ? [`<strong>${timeLabel}</strong>`] : []
 
           for (const p of params) {
-            if (p?.seriesName === 'timestamp' || p?.dataIndex !== undefined && typeof p?.data === 'string') continue
-           
+            if (p?.seriesName === 'timestamp' || p?.value == null || p?.value === '-') continue
             const name = p?.seriesName || ''
-            const value = p?.value
-            if (value == null || value === '-') continue
-            let displayValue: string
-            if (name.endsWith(' Pace')) {
-              const mins = Math.floor(value)
-              const secs = Math.round((value - mins) * 60)
-              displayValue = `${mins}:${secs.toString().padStart(2, '0')}`
-            } else {
-              displayValue = String(value)
-            }
-            const marker = p?.marker || ''
-            lines.push(`${marker}${name}: ${displayValue}`)
+            const value = p?.value as number
+            const display = name.endsWith(' Pace')
+              ? `${Math.floor(value)}:${String(Math.round((value - Math.floor(value)) * 60)).padStart(2, '0')}`
+              : String(value)
+            lines.push(`${p?.marker || ''}${name}: ${display}`)
           }
           return lines.join('<br/>')
         },
