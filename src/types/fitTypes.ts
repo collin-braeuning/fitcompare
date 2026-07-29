@@ -1,4 +1,7 @@
-import type { SimplifiedActivity } from '../utils/fitDataParser'
+import type { SimplifiedActivity, SimplifiedLapData } from '../utils/fitDataParser'
+
+// Re-export for use in components
+export type { SimplifiedLapData }
 
 export interface FileData {
   fileName: string

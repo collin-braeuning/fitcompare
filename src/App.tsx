@@ -91,6 +91,20 @@ function App() {
                         <td className="data-cell">{file1Loaded.activity.records.length}</td>
                         <td className="data-cell">{file2Loaded.activity.records.length}</td>
                       </tr>
+                      <tr>
+                        <td className="label-cell">Avg Pace (min/mi)</td>
+                        <td className="data-cell">
+                          {computeAvgPace(file1Loaded.activity.records)}
+                        </td>
+                        <td className="data-cell">
+                          {computeAvgPace(file2Loaded.activity.records)}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="label-cell">Laps</td>
+                        <td className="data-cell">{file1Loaded.activity.laps.length}</td>
+                        <td className="data-cell">{file2Loaded.activity.laps.length}</td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -123,6 +137,7 @@ function App() {
                     data={combinedGraphData}
                     zoomIndex={zoomIndex}
                     onZoomChange={handleZoomChange}
+                    laps={file1Loaded.activity.laps}
                   />
                 </div>
               </div>
@@ -195,6 +210,23 @@ interface UploadCardProps {
   onFileChange: (file: File) => void
   onSampleChange: (sample: { name: string; url: string }) => void
   sampleKey: string
+}
+
+/** Compute average pace (min/mi) from speed records (km/h). */
+function computeAvgPace(records: Array<{ speed: number | null }>): string {
+  let totalPace = 0
+  let count = 0
+  for (const r of records) {
+    if (r.speed && r.speed > 0) {
+      totalPace += (60 / r.speed) * 1.609344
+      count++
+    }
+  }
+  if (count === 0) return '—'
+  const avg = totalPace / count
+  const mins = Math.floor(avg)
+  const secs = Math.round((avg - mins) * 60)
+  return `${mins}:${secs.toString().padStart(2, '0')}`
 }
 
 const SAMPLES = import.meta.glob('/data/*.{fit,FIT}', {

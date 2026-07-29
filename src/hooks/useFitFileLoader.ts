@@ -20,19 +20,22 @@ export function useFitFileLoader() {
 
     fitParser.parse(buffer, (error: Error | null, parsedData: unknown) => {
       if (error) {
-        console.error('Error parsing FIT file:', error)
+        console.error('[useFitFileLoader] FIT parse error:', error)
         alert(`Error parsing file: ${error.message}`)
       } else {
         try {
           const simplifiedData: SimplifiedFitData = parseFitData(parsedData)
           if (simplifiedData.activities.length > 0) {
-            setData({
+            const fileData: FileData = {
               fileName: name.replace(/\.[^/.]+$/, ''),
               activity: simplifiedData.activities[0],
-            })
+            }
+            setData(fileData)
+          } else {
+            console.warn('[useFitFileLoader] no activities found in parsed data')
           }
         } catch (parseError) {
-          console.error('Error parsing simplified FIT data:', parseError)
+          console.error('[useFitFileLoader] Error parsing simplified FIT data:', parseError)
           alert('Error processing FIT data')
         }
       }
@@ -49,10 +52,14 @@ export function useFitFileLoader() {
 
   const loadSample = useCallback((sample: SampleFile) => {
     fetch(sample.url)
-      .then((r) => r.arrayBuffer())
-      .then((buf) => loadActivity(buf, sample.name))
+      .then((r) => {
+        return r.arrayBuffer()
+      })
+      .then((buf) => {
+        loadActivity(buf, sample.name)
+      })
       .catch((err) => {
-        console.error('Error loading sample: ', err)
+        console.error('[useFitFileLoader] Error loading sample: ', err)
         alert('Error loading sample file')
       })
   }, [loadActivity])
