@@ -92,7 +92,7 @@ function App() {
                         <td className="data-cell">{file2Loaded.activity.records.length}</td>
                       </tr>
                       <tr>
-                        <td className="label-cell">Avg Pace (min/km)</td>
+                        <td className="label-cell">Avg Pace (min/mi)</td>
                         <td className="data-cell">
                           {computeAvgPace(file1Loaded.activity.records)}
                         </td>
@@ -212,13 +212,13 @@ interface UploadCardProps {
   sampleKey: string
 }
 
-/** Compute average pace (min/km) from speed records (km/h). */
+/** Compute average pace (min/mi) from speed records (km/h). */
 function computeAvgPace(records: Array<{ speed: number | null }>): string {
   let totalPace = 0
   let count = 0
   for (const r of records) {
     if (r.speed && r.speed > 0) {
-      totalPace += 60 / r.speed
+      totalPace += (60 / r.speed) * 1.609344
       count++
     }
   }

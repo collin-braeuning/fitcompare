@@ -29,8 +29,8 @@ export function useGraphData(file1Loaded: FileData | null, file2Loaded: FileData
         point[seriesName] = record.heartRate || 0
 
         if (includePace && record.speed && record.speed > 0) {
-          // Pace in min/km = 60 / speed (km/h)
-          const pace = 60 / record.speed
+          // Pace in min/mile = 60 / speed (km/h) * 1.609344
+          const pace = (60 / record.speed) * 1.609344
           const paceKey = `${seriesName} Pace`
           point[paceKey] = pace
         }

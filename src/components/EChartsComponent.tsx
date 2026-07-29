@@ -53,6 +53,11 @@ const EChartsComponent: React.FC<ExtendedEChartsComponentProps> = ({
       }
     })
 
+    // Build display name map: HR series get " HR" suffix, pace series stay as-is
+    const seriesDisplayNameMap = new Map<string, string>()
+    hrSeries.forEach((name) => seriesDisplayNameMap.set(name, `${name} HR`))
+    paceSeries.forEach((name) => seriesDisplayNameMap.set(name, name))
+
     // Validate data
     if (hrSeries.length === 0 || data.length === 0) {
       console.warn('No HR data to render:', { seriesNames, dataLength: data.length })
@@ -62,9 +67,33 @@ const EChartsComponent: React.FC<ExtendedEChartsComponentProps> = ({
     // Transform data for ECharts
     const timestamps = data.map((d) => new Date(d.timestamp).toLocaleTimeString())
 
+    // Build lap mark line positions (skip the first lap)
+    const lapMarkLineData = (laps || [])
+      .filter((_, i) => i > 0)
+      .map((lap) => {
+        const lapDate = new Date(lap.startTime).getTime()
+        // Find the closest data point index
+        const idx = data.findIndex((d) => {
+          return new Date(d.timestamp).getTime() >= lapDate
+        })
+        return idx >= 0 ? { xAxis: idx } : null
+      })
+      .filter((m): m is { xAxis: number } => m !== null)
+
+    const markLineOption = lapMarkLineData.length > 0 ? ({
+      symbol: 'none',
+      label: { show: false },
+      data: lapMarkLineData.map((m) => ({ xAxis: m.xAxis })),
+      lineStyle: {
+        color: 'rgba(150, 150, 150, 0.1)',
+        width: 1,
+        type: 'dashed' as const,
+      },
+    }) : undefined
+
     // Build heart rate series — one series per HR data source (one per device)
     const heartRateSeriesConfiguration = hrSeries.map((name, index) => ({
-      name,
+      name: seriesDisplayNameMap.get(name) || name,
       type: 'line' as const,
       data: data.map((d) => d[name] || null),
       xAxisIndex: 0,
@@ -78,6 +107,7 @@ const EChartsComponent: React.FC<ExtendedEChartsComponentProps> = ({
       itemStyle: {
         color: CHART_COLORS.series[index],
       },
+      markLine: markLineOption,
     }))
 
     // Build pace series data
@@ -105,9 +135,50 @@ const EChartsComponent: React.FC<ExtendedEChartsComponentProps> = ({
         textStyle: {
           color: CHART_COLORS.tooltip.text,
         },
+        formatter: (params: unknown) => {
+          if (!Array.isArray(params)) return ''
+          
+          // Build a friendly time label from the first axis value
+          let timeLabel = ''
+          for (const p of params) {
+            if (p?.value && typeof p?.value === 'string' && (p.value.includes(':') || p.seriesName === 'timestamp')) {
+              timeLabel = p.value
+              break
+            }
+          }
+          // If we didn't get a time string, try to extract from the axis
+          if (!timeLabel && timestamps.length > 0) {
+            const first = params[0] as any
+            if (first?.dataIndex !== undefined) {
+              timeLabel = timestamps[first.dataIndex] || ''
+            }
+          }
+
+          const lines: string[] = []
+          if (timeLabel) lines.push(`<strong>${timeLabel}</strong>`)
+
+          for (const p of params) {
+            if (p?.seriesName === 'timestamp' || p?.dataIndex !== undefined && typeof p?.data === 'string') continue
+           
+            const name = p?.seriesName || ''
+            const value = p?.value
+            if (value == null || value === '-') continue
+            let displayValue: string
+            if (name.endsWith(' Pace')) {
+              const mins = Math.floor(value)
+              const secs = Math.round((value - mins) * 60)
+              displayValue = `${mins}:${secs.toString().padStart(2, '0')}`
+            } else {
+              displayValue = String(value)
+            }
+            const marker = p?.marker || ''
+            lines.push(`${marker}${name}: ${displayValue}`)
+          }
+          return lines.join('<br/>')
+        },
       },
       legend: {
-        data: seriesNames,
+        data: seriesNames.map((name) => seriesDisplayNameMap.get(name) || name),
         textStyle: {
           color: CHART_COLORS.text,
         },
@@ -164,21 +235,11 @@ const EChartsComponent: React.FC<ExtendedEChartsComponentProps> = ({
           type: 'value',
           scale: false,
           inverse: true,
-          name: 'Pace (min/km)',
-          nameTextStyle: {
-            color: '#2ecc71',
-            fontSize: 12,
-          },
+          name: 'Pace (min/mi)',
           nameLocation: 'middle',
           nameGap: 40,
           position: 'right',
-          axisLine: {
-            lineStyle: {
-              color: '#2ecc71',
-            },
-          },
           axisLabel: {
-            color: '#2ecc71',
             formatter: (value: number) => {
               const mins = Math.floor(value)
               const secs = Math.round((value - mins) * 60)
@@ -204,7 +265,7 @@ const EChartsComponent: React.FC<ExtendedEChartsComponentProps> = ({
       series: [
         ...heartRateSeriesConfiguration,
         {
-          name: 'Pace',
+          name: paceSeries.length > 0 ? (seriesDisplayNameMap.get(paceSeries[0]) || paceSeries[0]) : 'Pace',
           type: 'line',
           data: paceSeriesData[0] || [],
           xAxisIndex: 0,
@@ -219,6 +280,7 @@ const EChartsComponent: React.FC<ExtendedEChartsComponentProps> = ({
           itemStyle: {
             color: CHART_COLORS.pace,
           },
+          markLine: markLineOption,
         },
       ],
     }
