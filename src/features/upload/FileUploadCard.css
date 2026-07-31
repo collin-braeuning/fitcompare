@@ -20,6 +20,35 @@
   transform: translateY(-4px);
 }
 
+.upload-card-clear {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ddd;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.upload-card-clear:hover {
+  background: rgba(231, 76, 60, 0.25);
+  color: #ff9a8f;
+}
+
+.upload-card-clear:focus-visible {
+  outline: 2px solid #ffa500;
+  outline-offset: 2px;
+}
+
 .upload-card h4 {
   margin: 0.5rem 0 1rem 0;
   color: #ff6b35;

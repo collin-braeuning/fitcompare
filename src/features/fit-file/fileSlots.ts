@@ -1,3 +1,5 @@
+import type { LoadedFile } from './fitTypes'
+
 export interface FileSlot {
   id: string
   label: string
@@ -22,3 +24,12 @@ export const FILE_SLOTS: readonly FileSlot[] = [
  * are loaded.
  */
 export const [PRIMARY_SLOT, SECONDARY_SLOT] = FILE_SLOTS
+
+/**
+ * Packs a resolved pair of files into the same slot-keyed shape `useFitFiles`
+ * produces, so a batch drill-down can hand `ComparisonView` one record built
+ * on the spot instead of routing through the upload hook's state.
+ */
+export function pairBySlot(primary: LoadedFile, secondary: LoadedFile): Record<string, LoadedFile> {
+  return { [PRIMARY_SLOT.id]: primary, [SECONDARY_SLOT.id]: secondary }
+}

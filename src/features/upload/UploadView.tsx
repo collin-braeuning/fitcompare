@@ -7,6 +7,7 @@ interface UploadViewProps {
   onSelectFile: (slotId: string, file: File) => void
   onSelectSample: (slotId: string, sample: SampleFile) => void
   onSetPaceSource: (slotId: string) => void
+  onClearSlot: (slotId: string) => void
   onCompare: () => void
   /** Switches to the batch screen — comparing many activities across sessions, not just these two files. */
   onCompareMany: () => void
@@ -19,6 +20,7 @@ export function UploadView({
   onSelectFile,
   onSelectSample,
   onSetPaceSource,
+  onClearSlot,
   onCompare,
   onCompareMany,
 }: UploadViewProps) {
@@ -36,6 +38,7 @@ export function UploadView({
               onSelectFile={(file) => onSelectFile(slot.id, file)}
               onSelectSample={(sample) => onSelectSample(slot.id, sample)}
               onSetPaceSource={() => onSetPaceSource(slot.id)}
+              onClear={() => onClearSlot(slot.id)}
             />
           </div>
         ))}

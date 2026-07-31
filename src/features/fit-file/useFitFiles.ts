@@ -71,11 +71,6 @@ export function useFitFiles() {
     setSlots((prev) => ({ ...prev, [slotId]: EMPTY }))
   }, [])
 
-  const resetAll = useCallback(() => {
-    activeToken.current = {}
-    setSlots({})
-  }, [])
-
   /** Slot state for any id, including ones never touched. */
   const slotState = useCallback((slotId: string): SlotState => slots[slotId] ?? EMPTY, [slots])
 
@@ -88,5 +83,5 @@ export function useFitFiles() {
     return loaded
   }, [slots])
 
-  return { slotState, loadedBySlot, loadFile, loadSample, reset, resetAll }
+  return { slotState, loadedBySlot, loadFile, loadSample, reset }
 }

@@ -1,24 +1,16 @@
-import { useMemo, useState, type ChangeEvent } from 'react'
+import { useMemo, type ChangeEvent } from 'react'
 import { BlandAltmanChart, ConcordanceChart } from '../../components/charts'
 import { GraphCard } from '../../components/GraphCard'
 import { StatBadge } from '../../components/StatBadge'
-import type { LoadedFile, SampleFile } from '../fit-file'
 import { SAMPLE_FILES } from '../fit-file'
 import { cccLabel, cccLevel } from '../comparison/agreementScale'
-import { groupActivityFiles } from './activitySessions'
 import { BatchSessionTable } from './BatchSessionTable'
-import { useBatchAgreement } from './useBatchAgreement'
-import type { BatchFileState, BatchProgress } from './useBatchFiles'
+import type { BatchScreen } from './useBatchScreen'
 import './BatchView.css'
 
 interface BatchViewProps {
-  states: Record<string, BatchFileState>
-  loadedByName: Record<string, LoadedFile>
-  progress: BatchProgress
-  isLoading: boolean
-  onLoadSamples: (samples: readonly SampleFile[]) => Promise<void>
-  onLoadFiles: (files: readonly File[]) => Promise<void>
-  onBack: () => void
+  batch: BatchScreen
+  onOpenSession: (sessionId: string) => void
 }
 
 function unparsedReasonLabel(reason: 'name-pattern' | 'duplicate-device'): string {
@@ -36,38 +28,21 @@ function unparsedReasonLabel(reason: 'name-pattern' | 'duplicate-device'): strin
  * 2-file comparison screen — this view is for the overview, not the
  * diagnosis, so it carries no lag correction, no exclude toggles, no export.
  */
-export function BatchView({
-  states,
-  loadedByName,
-  progress,
-  isLoading,
-  onLoadSamples,
-  onLoadFiles,
-  onBack,
-}: BatchViewProps) {
-  // What the user has explicitly picked, if anything. Derived (not effect-set)
-  // fallbacks below default to the two most common devices once files are
-  // loaded, without fighting a choice the user has already made.
-  const [primarySelection, setPrimarySelection] = useState('')
-  const [secondarySelection, setSecondarySelection] = useState('')
-
-  // Cheap to recompute (a handful of filenames) — used only to pick sensible
-  // defaults before `useBatchAgreement` runs the real, memoised grouping.
-  const deviceCandidates = useMemo(
-    () => groupActivityFiles(Object.keys(loadedByName)).devices,
-    [loadedByName],
-  )
-
-  const primaryDeviceKey = deviceCandidates.some((d) => d.key === primarySelection)
-    ? primarySelection
-    : (deviceCandidates[0]?.key ?? '')
-  const secondaryDeviceKey = deviceCandidates.some(
-    (d) => d.key === secondarySelection && d.key !== primaryDeviceKey,
-  )
-    ? secondarySelection
-    : (deviceCandidates.find((d) => d.key !== primaryDeviceKey)?.key ?? '')
-
-  const { grouping, agreement } = useBatchAgreement(loadedByName, primaryDeviceKey, secondaryDeviceKey)
+export function BatchView({ batch, onOpenSession }: BatchViewProps) {
+  const {
+    states,
+    progress,
+    isLoading,
+    grouping,
+    agreement,
+    primaryDeviceKey,
+    secondaryDeviceKey,
+    loadSamples,
+    loadFiles,
+    clear,
+    selectPrimary,
+    selectSecondary,
+  } = batch
 
   const erroredFiles = useMemo(
     () =>
@@ -79,7 +54,7 @@ export function BatchView({
 
   const handleFileInput = (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
-    if (files && files.length > 0) onLoadFiles(Array.from(files))
+    if (files && files.length > 0) loadFiles(Array.from(files))
     event.target.value = ''
   }
 
@@ -88,11 +63,7 @@ export function BatchView({
   return (
     <div className="batch-view">
       <div className="batch-toolbar">
-        <button className="btn btn-secondary" onClick={onBack}>
-          Back
-        </button>
-
-        <button className="btn btn-primary" onClick={() => onLoadSamples(SAMPLE_FILES)} disabled={isLoading}>
+        <button className="btn btn-primary" onClick={() => loadSamples(SAMPLE_FILES)} disabled={isLoading}>
           Load All From data/
         </button>
 
@@ -101,11 +72,15 @@ export function BatchView({
           <input type="file" accept=".fit,.FIT" multiple onChange={handleFileInput} disabled={isLoading} />
         </label>
 
+        <button className="btn btn-secondary" onClick={clear} disabled={isLoading}>
+          Clear
+        </button>
+
         {grouping.devices.length >= 2 && (
           <div className="batch-device-pickers">
             <label>
               Primary
-              <select value={primaryDeviceKey} onChange={(e) => setPrimarySelection(e.target.value)}>
+              <select value={primaryDeviceKey} onChange={(e) => selectPrimary(e.target.value)}>
                 {grouping.devices.map((device) => (
                   <option key={device.key} value={device.key}>
                     {device.label}
@@ -115,7 +90,7 @@ export function BatchView({
             </label>
             <label>
               Secondary
-              <select value={secondaryDeviceKey} onChange={(e) => setSecondarySelection(e.target.value)}>
+              <select value={secondaryDeviceKey} onChange={(e) => selectSecondary(e.target.value)}>
                 {grouping.devices.map((device) => (
                   <option key={device.key} value={device.key}>
                     {device.label}
@@ -197,7 +172,7 @@ export function BatchView({
       {agreement && (agreement.sessions.length > 0 || agreement.skipped.length > 0) && (
         <div className="row mb-4">
           <div className="col-12">
-            <BatchSessionTable agreement={agreement} />
+            <BatchSessionTable agreement={agreement} onOpenSession={onOpenSession} />
           </div>
         </div>
       )}

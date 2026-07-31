@@ -3,24 +3,9 @@ import type { LoadedFile, SampleFile } from '../fit-file'
 import { fetchArrayBuffer, readFileAsArrayBuffer } from '../fit-file/loadFitFile'
 import { stripFileExtension } from '../../lib/filename'
 import { loadBatch, type BatchSource } from './loadBatch'
+import { EMPTY_PROGRESS, initialBatchStates, type BatchFileState, type BatchProgress } from './batchStates'
 
-/**
- * Loading state for one file in the batch, keyed by its extension-stripped
- * name so it lines up with `SAMPLE_FILES.name` and `parseActivityFileName`.
- */
-export type BatchFileState =
-  | { status: 'pending' }
-  | { status: 'loading' }
-  | { status: 'loaded'; file: LoadedFile }
-  | { status: 'error'; message: string }
-
-export interface BatchProgress {
-  total: number
-  done: number
-  errored: number
-}
-
-const EMPTY_PROGRESS: BatchProgress = { total: 0, done: 0, errored: 0 }
+export type { BatchFileState, BatchProgress } from './batchStates'
 
 /** How many files `loadBatch` reads/parses at once. */
 const CONCURRENCY = 3
@@ -34,6 +19,11 @@ const CONCURRENCY = 3
  * by starting a new run or calling `reset` — must invalidate every in-flight
  * file at once. A per-file token map would let a half-cancelled run leave
  * orphaned entries behind.
+ *
+ * `run` **replaces** `states` rather than merging: a second "Load All From
+ * data/" after a folder pick must not leave the first set's files grouped in
+ * with the second. `rejected` carries any errors computed *before* the run
+ * (see `loadFiles`) through the replace instead of losing them to it.
  */
 export function useBatchFiles() {
   const [states, setStates] = useState<Record<string, BatchFileState>>({})
@@ -42,17 +32,13 @@ export function useBatchFiles() {
 
   const runToken = useRef(0)
 
-  const run = useCallback(async (sources: BatchSource[]) => {
+  const run = useCallback(async (sources: BatchSource[], rejected: Record<string, BatchFileState> = {}) => {
     const token = ++runToken.current
     const isStale = () => runToken.current !== token
 
     setIsLoading(true)
     setProgress({ total: sources.length, done: 0, errored: 0 })
-    setStates((prev) => {
-      const next = { ...prev }
-      for (const source of sources) next[source.name] = { status: 'pending' }
-      return next
-    })
+    setStates(() => initialBatchStates(sources, rejected))
 
     await loadBatch(
       sources,
@@ -93,32 +79,22 @@ export function useBatchFiles() {
       // rather than silently overwriting the first file's result.
       const seen = new Set<string>()
       const sources: BatchSource[] = []
-      const duplicates: Array<{ originalName: string; strippedName: string }> = []
+      const rejected: Record<string, BatchFileState> = {}
 
       for (const file of files) {
         const strippedName = stripFileExtension(file.name)
         if (seen.has(strippedName)) {
-          duplicates.push({ originalName: file.name, strippedName })
+          rejected[file.name] = {
+            status: 'error',
+            message: `"${file.name}" duplicates "${strippedName}" and was skipped.`,
+          }
           continue
         }
         seen.add(strippedName)
         sources.push({ name: strippedName, read: () => readFileAsArrayBuffer(file) })
       }
 
-      if (duplicates.length > 0) {
-        setStates((prev) => {
-          const next = { ...prev }
-          for (const { originalName, strippedName } of duplicates) {
-            next[originalName] = {
-              status: 'error',
-              message: `"${originalName}" duplicates "${strippedName}" and was skipped.`,
-            }
-          }
-          return next
-        })
-      }
-
-      return run(sources)
+      return run(sources, rejected)
     },
     [run],
   )

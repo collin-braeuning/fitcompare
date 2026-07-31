@@ -9,6 +9,8 @@ interface FileUploadCardProps {
   onSelectSample: (sample: SampleFile) => void
   isPaceSource: boolean
   onSetPaceSource: () => void
+  /** Resets this slot back to empty. The only way to change a loaded file today. */
+  onClear: () => void
 }
 
 /** One upload slot: file picker, sample picker, and whatever it's loaded. */
@@ -19,6 +21,7 @@ export function FileUploadCard({
   onSelectSample,
   isPaceSource,
   onSetPaceSource,
+  onClear,
 }: FileUploadCardProps) {
   const handleFileInput = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -32,6 +35,17 @@ export function FileUploadCard({
 
   return (
     <div className="upload-card">
+      {(state.status === 'loaded' || state.status === 'error') && (
+        <button
+          type="button"
+          className="upload-card-clear"
+          onClick={onClear}
+          aria-label={`Clear ${slot.label}`}
+        >
+          &#10005;
+        </button>
+      )}
+
       <div className="upload-icon" aria-hidden="true">
         &#128193;
       </div>
