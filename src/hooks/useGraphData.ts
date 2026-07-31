@@ -1,21 +1,57 @@
 import { useMemo } from 'react'
 import type { FileData, GraphDataPoint } from '../types/fitTypes'
 
-export function useGraphData(file1Loaded: FileData | null, file2Loaded: FileData | null) {
+export interface GraphFileInput {
+  id: string
+  data: FileData | null
+}
+
+/**
+ * Assigns each loaded file a unique series name, appending "(n)" only for
+ * files that actually collide on name. Works for any number of files, not
+ * just a hardcoded pair.
+ */
+function buildSeriesNameById(loadedFiles: Array<{ id: string; data: FileData }>): Map<string, string> {
+  const baseNameById = new Map<string, string>()
+  const totalByBaseName = new Map<string, number>()
+
+  loadedFiles.forEach(({ id, data }) => {
+    const baseName = data.fileName.replace(/\.[^/.]+$/, '')
+    baseNameById.set(id, baseName)
+    totalByBaseName.set(baseName, (totalByBaseName.get(baseName) ?? 0) + 1)
+  })
+
+  const seenByBaseName = new Map<string, number>()
+  const seriesNameById = new Map<string, string>()
+  loadedFiles.forEach(({ id }) => {
+    const baseName = baseNameById.get(id)!
+    if ((totalByBaseName.get(baseName) ?? 0) > 1) {
+      const occurrence = (seenByBaseName.get(baseName) ?? 0) + 1
+      seenByBaseName.set(baseName, occurrence)
+      seriesNameById.set(id, `${baseName} (${occurrence})`)
+    } else {
+      seriesNameById.set(id, baseName)
+    }
+  })
+
+  return seriesNameById
+}
+
+export function useGraphData(files: GraphFileInput[], paceSourceId: string | null) {
+  const loadedFiles = useMemo(
+    () => files.filter((f): f is { id: string; data: FileData } => f.data !== null),
+    [files],
+  )
+
+  const seriesNameById = useMemo(() => buildSeriesNameById(loadedFiles), [loadedFiles])
+
   const combinedGraphData = useMemo<GraphDataPoint[]>(() => {
-    if (!file1Loaded || !file2Loaded) return []
-
-    const file1Name = file1Loaded.fileName.replace(/\.[^/.]+$/, '')
-    const file2Name = file2Loaded.fileName.replace(/\.[^/.]+$/, '')
-
-    // Create unique series names
-    const series1Name = file1Name === file2Name ? `${file1Name} (1)` : file1Name
-    const series2Name = file1Name === file2Name ? `${file2Name} (2)` : file2Name
+    if (loadedFiles.length < 2) return []
 
     const dataMap = new Map<number, GraphDataPoint>()
 
     const mergeRecords = (
-      records: typeof file1Loaded.activity.records,
+      records: FileData['activity']['records'],
       seriesName: string,
       includePace: boolean,
     ) => {
@@ -37,15 +73,16 @@ export function useGraphData(file1Loaded: FileData | null, file2Loaded: FileData
       })
     }
 
-    mergeRecords(file1Loaded.activity.records, series1Name, true)
-    mergeRecords(file2Loaded.activity.records, series2Name, false)
+    loadedFiles.forEach(({ id, data }) => {
+      mergeRecords(data.activity.records, seriesNameById.get(id)!, id === paceSourceId)
+    })
 
     const allData = Array.from(dataMap.entries())
       .sort((a, b) => a[0] - b[0])
       .map(([, point]) => point)
 
     return allData
-  }, [file1Loaded, file2Loaded])
+  }, [loadedFiles, seriesNameById, paceSourceId])
 
-  return { combinedGraphData }
+  return { combinedGraphData, seriesNameById }
 }

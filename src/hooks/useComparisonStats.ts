@@ -1,15 +1,17 @@
 import { useMemo } from 'react'
-import type { FileData, GraphDataPoint } from '../types/fitTypes'
+import type { GraphDataPoint } from '../types/fitTypes'
 import { calculateAbsoluteDifferenceStats, calculateBlandAltmanStats, calculateConcordanceStats } from '../utils/comparisonStats'
 
-export function useComparisonStats(file1Loaded: FileData | null, file2Loaded: FileData | null, combinedGraphData: GraphDataPoint[]) {
+export function useComparisonStats(
+  file1Id: string,
+  file2Id: string,
+  seriesNameById: Map<string, string>,
+  combinedGraphData: GraphDataPoint[],
+) {
   const pairedValues = useMemo(() => {
-    if (!file1Loaded || !file2Loaded || combinedGraphData.length === 0) return null
-
-    const file1Name = file1Loaded.fileName.replace(/\.[^/.]+$/, '')
-    const file2Name = file2Loaded.fileName.replace(/\.[^/.]+$/, '')
-    const series1Name = file1Name === file2Name ? `${file1Name} (1)` : file1Name
-    const series2Name = file1Name === file2Name ? `${file2Name} (2)` : file2Name
+    const series1Name = seriesNameById.get(file1Id)
+    const series2Name = seriesNameById.get(file2Id)
+    if (!series1Name || !series2Name || combinedGraphData.length === 0) return null
 
     const file1Values: number[] = []
     const file2Values: number[] = []
@@ -29,7 +31,7 @@ export function useComparisonStats(file1Loaded: FileData | null, file2Loaded: Fi
     if (file1Values.length === 0) return null
 
     return { file1Values, file2Values, series1Name, series2Name }
-  }, [file1Loaded, file2Loaded, combinedGraphData])
+  }, [file1Id, file2Id, seriesNameById, combinedGraphData])
 
   const comparisonStats = useMemo(() => {
     if (!pairedValues) return null
