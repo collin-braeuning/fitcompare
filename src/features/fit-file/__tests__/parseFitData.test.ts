@@ -1,30 +1,22 @@
-/// <reference types="vitest" />
 import { describe, it, expect, beforeAll } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import FitParser from 'fit-file-parser';
-import { parseFitData } from '../fitDataParser';
+import { parseFitData } from '../parseFitData';
 
-// Run all tests in this file
-// npx vitest run src/utils/__tests__/fitDataParser.test.ts
+// A characterisation test against a real recording: it pins the parser to
+// known-good numbers so a refactor can't silently change what comes out of a
+// FIT file. `parseFitData` takes `unknown`, so no casts are needed here.
 
-// Watch mode (re-runs on file changes)
-// npx vitest watch src/utils/__tests__/fitDataParser.test.ts
-
-// Run all tests in the project
-// npx vitest run
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const FIT_FILE_PATH = path.resolve(__dirname, '../../../data/2026-07-26-pace4_run.fit');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const FIT_FILE_PATH = path.resolve(__dirname, '../../../../data/2026-07-26-pace4_run.fit');
 
 describe('parseFitData', () => {
-  // Load the FIT file and parse it with fit-file-parser to get the raw structure
-  function getRawFitData(): any {
+  function getRawFitData(): Promise<unknown> {
     const buffer = fs.readFileSync(FIT_FILE_PATH);
     const parser = new FitParser({ mode: 'cascade', force: true, speedUnit: 'km/h', lengthUnit: 'km' });
-    return new Promise<any>((resolve, reject) => {
+    return new Promise<unknown>((resolve, reject) => {
       parser.parse(buffer, (err, data) => {
         if (err) reject(err);
         else resolve(data);
@@ -33,7 +25,7 @@ describe('parseFitData', () => {
   }
 
   describe('2026-07-26 pace4 run FIT file', () => {
-    let rawData: any;
+    let rawData: unknown;
 
     beforeAll(async () => {
       rawData = await getRawFitData();

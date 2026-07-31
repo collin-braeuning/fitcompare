@@ -41,23 +41,62 @@ npm run build
 
 ## Project Structure
 
+Code is organised by **feature**, not by file kind. Each feature folder owns its
+types, its pure logic, its hooks and its components; `components/` and `lib/`
+hold only things genuinely shared between features.
+
 ```
-fit-compare/
- public/
- src/
-    App.tsx
-    App.css
-    main.tsx
-    utils/fitDataParser.ts
- package.json
- README.md
+src/
+  App.tsx                  App shell: upload screen ⇄ comparison screen
+  main.tsx
+
+  features/
+    fit-file/              Reading and parsing .fit files
+      fitTypes.ts            Domain model (FitActivity, FitLap, FitRecord…)
+      parseFitData.ts        Raw parser output → domain model (pure)
+      loadFitFile.ts         File/network I/O, React-free
+      useFitFiles.ts         Loading + error state per upload slot
+      fileSlots.ts           How many upload slots there are, and their roles
+      sampleFiles.ts         Bundled sample activities from /data
+    upload/                The landing screen
+      UploadView.tsx
+      FileUploadCard.tsx / .css
+    comparison/            The results screen
+      ComparisonView.tsx / .css
+      ActivityComparisonTable.tsx / .css
+      comparisonChartData.ts Aligns recordings onto one timeline (pure)
+      comparisonStats.ts     Bland-Altman, Lin's CCC, differences (pure)
+      comparisonSummary.ts   Pairs two series and runs the stats (pure)
+      agreementScale.ts      good/warn/bad thresholds
+      useComparisonData.ts   Memoises the two steps above
+
+  components/              Shared UI, no feature knowledge
+    GraphCard.tsx / .css
+    StatBadge.tsx / .css
+    charts/
+      useEChart.ts           ECharts lifecycle ↔ React
+      chartTheme.ts          Palette + shared axis/tooltip styling
+      *Chart.tsx             Thin components
+      *Option.ts             Pure ECharts option builders (testable)
+
+  lib/                     Framework-free helpers (pace maths, filenames)
 ```
+
+Two conventions worth keeping:
+
+- **Pure logic lives outside React.** Anything that could be a plain function is
+  one, so it can be unit-tested without rendering. Hooks only decide *when* to
+  recompute.
+- **`components/` never imports a feature's barrel** (`features/x/index.ts`),
+  only specific modules — that's what keeps import cycles from forming.
 
 ## Developer Notes
 
-- The app uses `fit-file-parser` to convert FIT binaries into usable JSON structures.
-- ECharts provides native dataZoom (`slider` + `inside`) and high performance rendering.
-- If charts appear blank after upload, check browser DevTools (Console) for debug logs; there are console logs in `App.tsx` for data diagnostics.
+- `fit-file-parser` converts FIT binaries to JSON; `parseFitData` is the only
+  code that touches that raw shape, so its output types can be trusted.
+- ECharts provides native `dataZoom` and handles tens of thousands of points.
+- Chart configuration lives in pure `*Option.ts` builders; if a chart looks
+  wrong, that's the file to read (and the one to test).
 
 ## Contributing
 

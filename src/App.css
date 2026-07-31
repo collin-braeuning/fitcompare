@@ -1,4 +1,6 @@
-/* Root & Global */
+/* App shell: page frame, header, and the shared button styles. Anything that
+   belongs to a single component lives in that component's own stylesheet. */
+
 #root {
   margin: 0 auto;
   padding: 0;
@@ -32,14 +34,17 @@
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* Main Content */
 .main-content {
   padding: 2rem 1rem;
   max-width: none;
   width: 100%;
 }
 
-/* Form Controls */
+.text-center {
+  text-align: center;
+}
+
+/* File input */
 .form-control-lg {
   font-size: 1rem;
   border: 2px solid #ff6b35;
@@ -48,34 +53,18 @@
 }
 
 .form-control-lg::file-selector-button {
-  background-color: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
   color: white;
   border: none;
   cursor: pointer;
   font-weight: 700;
-  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
 }
 
 .form-control-lg::file-selector-button:hover {
   background: linear-gradient(135deg, #e55a24 0%, #e8800f 100%);
 }
 
-.text-muted {
-  color: #999 !important;
-}
-
-/* Upload "or" separator */
-.upload-or {
-  display: block;
-  margin: 0.75rem 0;
-  color: #666;
-  font-size: 0.85rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-/* Global Button Styles */
+/* Buttons */
 .btn {
   padding: 0.75rem 1.5rem;
   border-radius: 6px;
@@ -116,8 +105,18 @@
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
 }
 
-.text-center {
-  text-align: center;
+.btn-small {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
+.btn-reset {
+  background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%);
+  color: white;
+}
+
+.btn-reset:hover {
+  background: linear-gradient(135deg, #ff9500 0%, #ff7c00 100%);
 }
 
 /* Responsive */
