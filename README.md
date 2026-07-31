@@ -55,13 +55,14 @@ src/
       fitTypes.ts            Domain model (FitActivity, FitLap, FitRecord…)
       parseFitData.ts        Raw parser output → domain model (pure)
       loadFitFile.ts         File/network I/O, React-free
+      heartRateSamples.ts    Second-bucketing + the 0-bpm dropout rule (pure)
       useFitFiles.ts         Loading + error state per upload slot
       fileSlots.ts           How many upload slots there are, and their roles
       sampleFiles.ts         Bundled sample activities from /data
     upload/                The landing screen
       UploadView.tsx
       FileUploadCard.tsx / .css
-    comparison/            The results screen
+    comparison/            The 2-file results screen
       ComparisonView.tsx / .css
       ActivityComparisonTable.tsx / .css
       comparisonChartData.ts Aligns recordings onto one timeline (pure)
@@ -69,6 +70,15 @@ src/
       comparisonSummary.ts   Pairs two series and runs the stats (pure)
       agreementScale.ts      good/warn/bad thresholds
       useComparisonData.ts   Memoises the two steps above
+    batch/                 The many-activities overview screen
+      activitySessions.ts    Groups filenames into (date, activity) sessions (pure)
+      alignSamples.ts        N-device intersection of second-indexed samples (pure)
+      batchAgreement.ts      Per-session + pooled Bland-Altman/CCC (pure)
+      loadBatch.ts           Concurrency-limited load/parse of many files (pure)
+      useBatchFiles.ts       Loading state for the whole batch
+      useBatchAgreement.ts   Memoises grouping → samples → agreement
+      BatchView.tsx / .css
+      BatchSessionTable.tsx / .css
 
   components/              Shared UI, no feature knowledge
     GraphCard.tsx / .css
@@ -76,6 +86,7 @@ src/
     charts/
       useEChart.ts           ECharts lifecycle ↔ React
       chartTheme.ts          Palette + shared axis/tooltip styling
+      pointDensity.ts        Dedupe + weight scatter points (pure)
       *Chart.tsx             Thin components
       *Option.ts             Pure ECharts option builders (testable)
 

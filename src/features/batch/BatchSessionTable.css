@@ -1,0 +1,87 @@
+.batch-table-card {
+  background: linear-gradient(135deg, #1a1f3a 0%, #2d2e4f 100%);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  overflow-x: auto;
+  border-top: 3px solid #ff6b35;
+}
+
+.batch-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+}
+
+.batch-table thead {
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  color: white;
+}
+
+.batch-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 800;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.batch-table tbody tr {
+  border-bottom: 1px solid #444;
+  transition: background-color 0.3s ease;
+}
+
+.batch-table tbody tr:hover {
+  background-color: rgba(255, 107, 53, 0.05);
+}
+
+.batch-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.batch-table td {
+  padding: 0.85rem 1rem;
+  font-size: 0.9rem;
+  color: #ddd;
+  vertical-align: middle;
+}
+
+.batch-table-detail {
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: 0.15rem;
+}
+
+.batch-table-row-skipped {
+  font-style: italic;
+  color: #888;
+}
+
+.batch-table-row-skipped td {
+  color: #999;
+}
+
+/* Levels come from features/comparison/agreementScale.ts, same palette as StatBadge. */
+.batch-cell-good {
+  color: #27ae60;
+  font-weight: 700;
+}
+
+.batch-cell-warn {
+  color: #f39c12;
+  font-weight: 700;
+}
+
+.batch-cell-bad {
+  color: #e74c3c;
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .batch-table th,
+  .batch-table td {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.8rem;
+  }
+}

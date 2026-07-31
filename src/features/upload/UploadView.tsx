@@ -8,9 +8,11 @@ interface UploadViewProps {
   onSelectSample: (slotId: string, sample: SampleFile) => void
   onSetPaceSource: (slotId: string) => void
   onCompare: () => void
+  /** Switches to the batch screen — comparing many activities across sessions, not just these two files. */
+  onCompareMany: () => void
 }
 
-/** The landing screen: one card per upload slot, plus the compare action. */
+/** The landing screen: one card per upload slot, plus the compare actions. */
 export function UploadView({
   slotState,
   paceSourceId,
@@ -18,6 +20,7 @@ export function UploadView({
   onSelectSample,
   onSetPaceSource,
   onCompare,
+  onCompareMany,
 }: UploadViewProps) {
   const allSlotsLoaded = FILE_SLOTS.every((slot) => slotState(slot.id).status === 'loaded')
 
@@ -46,6 +49,14 @@ export function UploadView({
             disabled={!allSlotsLoaded}
           >
             Compare Activities
+          </button>
+        </div>
+      </div>
+
+      <div className="row">
+        <div className="col-12 text-center">
+          <button className="btn btn-secondary mt-4" onClick={onCompareMany}>
+            Compare Many Activities
           </button>
         </div>
       </div>
