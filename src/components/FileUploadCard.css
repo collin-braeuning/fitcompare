@@ -34,6 +34,29 @@
   margin-bottom: 0.5rem;
 }
 
+/* Pace Source Toggle */
+.pace-source-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  color: #bbb;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.pace-source-toggle input[type='checkbox'] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #ff6b35;
+  cursor: pointer;
+}
+
 .upload-card .form-label {
   font-weight: 700;
   color: #bbb;
