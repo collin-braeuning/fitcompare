@@ -1,4 +1,5 @@
 import type { FileSlot, LoadedFile } from '../fit-file'
+import { toSecondBucket, usableHeartRate } from '../fit-file'
 import { speedToPace } from '../../lib/pace'
 
 /**
@@ -56,12 +57,6 @@ function buildDisplayNames(files: Array<{ slotId: string; file: LoadedFile }>): 
   return names
 }
 
-/** Whole-second bucket for a record timestamp, or null if unparseable. */
-function toSecondBucket(timestamp: string): number | null {
-  const ms = Date.parse(timestamp)
-  return Number.isNaN(ms) ? null : Math.round(ms / 1000)
-}
-
 /**
  * Build the shared timeline and one aligned series per device.
  *
@@ -115,7 +110,10 @@ export function buildComparisonChartData(
 
       // Devices report 0 bpm when the sensor loses contact; that's a dropout,
       // not a reading, so it must not be charted or fed into the statistics.
-      hrValues[index] = record.heartRate && record.heartRate > 0 ? record.heartRate : null
+      // Skipping (rather than unconditionally assigning) means a dropout on a
+      // duplicated second can never overwrite an already-recorded good value.
+      const hr = usableHeartRate(record)
+      if (hr !== null) hrValues[index] = hr
       if (paceValues) paceValues[index] = speedToPace(record.speed)
     }
 

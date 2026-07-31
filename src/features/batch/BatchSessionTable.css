@@ -1,0 +1,123 @@
+.batch-table-card {
+  background: linear-gradient(135deg, #1a1f3a 0%, #2d2e4f 100%);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  overflow-x: auto;
+  border-top: 3px solid #ff6b35;
+}
+
+.batch-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+}
+
+.batch-table thead {
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  color: white;
+}
+
+.batch-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 800;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.batch-table tbody tr {
+  border-bottom: 1px solid #444;
+  transition: background-color 0.3s ease;
+}
+
+.batch-table tbody tr:hover {
+  background-color: rgba(255, 107, 53, 0.05);
+}
+
+.batch-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.batch-table td {
+  padding: 0.85rem 1rem;
+  font-size: 0.9rem;
+  color: #ddd;
+  vertical-align: middle;
+}
+
+.batch-table-detail {
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: 0.15rem;
+}
+
+.batch-table-row-skipped {
+  font-style: italic;
+  color: #888;
+}
+
+.batch-table-row-skipped td {
+  color: #999;
+}
+
+.batch-table-row-clickable {
+  cursor: pointer;
+}
+
+.batch-table-row-clickable:hover {
+  background-color: rgba(255, 107, 53, 0.12);
+}
+
+.batch-table-row-clickable:focus-within {
+  outline: 2px solid #ffa500;
+  outline-offset: -2px;
+}
+
+/* Unstyled-button reset: the button exists for keyboard/AT affordance, not
+   its own visual identity — the row itself carries the hover/click styling.
+   `transform: none` cancels the global `.btn`-adjacent hover lift so the
+   text doesn't visibly shift under focus/hover. */
+.batch-row-open {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transform: none;
+}
+
+/* Levels come from features/comparison/agreementScale.ts, same palette as StatBadge. */
+.batch-cell-good {
+  color: #27ae60;
+  font-weight: 700;
+}
+
+.batch-cell-warn {
+  color: #f39c12;
+  font-weight: 700;
+}
+
+.batch-cell-bad {
+  color: #e74c3c;
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .batch-table th,
+  .batch-table td {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  /* At this width the clickable row's default padding leaves a ~39px row —
+     under the 44px touch-target guideline. Only the clickable rows get the
+     bump; the skipped rows' single wide cell doesn't need it. */
+  .batch-table-row-clickable td {
+    padding-block: 0.85rem;
+  }
+}

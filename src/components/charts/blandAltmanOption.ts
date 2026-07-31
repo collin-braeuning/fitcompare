@@ -7,7 +7,11 @@ import {
   tooltipPoint,
   tooltipStyle,
   valueAxis,
+  weightedScatterItemStyle,
+  weightedSymbolSize,
+  type AgreementPlotOptions,
 } from './chartTheme'
+import { collapsePairs } from './pointDensity'
 
 /** A horizontal annotation line (bias, upper LoA, lower LoA). */
 function referenceLine(
@@ -38,8 +42,16 @@ export function buildBlandAltmanOption(
   stats: BlandAltmanStats,
   primaryName: string,
   secondaryName: string,
+  plot?: AgreementPlotOptions,
 ): EChartsOption {
   const diffLabel = `${primaryName} − ${secondaryName}`
+  const weighted = plot?.weighted ?? false
+
+  const data = weighted
+    ? collapsePairs(stats.points.map((point): [number, number] => [point.mean, point.diff])).map(
+        (p) => [p.x, p.y, p.count],
+      )
+    : stats.points.map((point) => [point.mean, point.diff])
 
   return {
     ...chartBackground,
@@ -51,7 +63,11 @@ export function buildBlandAltmanOption(
         const point = tooltipPoint(params)
         if (!point) return ''
         const [mean, diff] = point
-        return `Mean: ${mean.toFixed(1)} bpm<br/>${diffLabel}: ${diff.toFixed(1)} bpm`
+        const base = `Mean: ${mean.toFixed(1)} bpm<br/>${diffLabel}: ${diff.toFixed(1)} bpm`
+        if (!weighted) return base
+        const count = (params as { data?: unknown }).data
+        const n = Array.isArray(count) ? count[2] : undefined
+        return typeof n === 'number' ? `${base}<br/>${n} point${n === 1 ? '' : 's'}` : base
       },
     },
     xAxis: valueAxis('Mean of both devices (bpm)'),
@@ -59,8 +75,19 @@ export function buildBlandAltmanOption(
     series: [
       {
         type: 'scatter',
-        data: stats.points.map((point) => [point.mean, point.diff]),
-        ...scatterStyle,
+        data,
+        ...(weighted
+          ? {
+              symbolSize: weightedSymbolSize,
+              itemStyle: weightedScatterItemStyle,
+              // Safety net for the pooled scatter's point count; large mode
+              // is deliberately not set — its simplified renderer ignores a
+              // per-point `symbolSize` callback and would silently discard
+              // the density encoding this view exists to show.
+              progressive: 2000,
+              progressiveThreshold: 3000,
+            }
+          : scatterStyle),
         markLine: {
           symbol: 'none',
           silent: true,

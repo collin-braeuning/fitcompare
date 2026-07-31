@@ -90,3 +90,30 @@ export const scatterStyle = {
     borderWidth: 2,
   },
 } as const
+
+/**
+ * Optional extra behaviour for the two agreement scatters, additive so the
+ * existing pairwise screen (which never sets `weighted`) is byte-for-byte
+ * unchanged.
+ */
+export interface AgreementPlotOptions {
+  /**
+   * Dedupe points and size by multiplicity instead of drawing every raw pair.
+   * Needed once a scatter pools thousands of points into a few hundred
+   * distinct integer coordinates — a fixed `symbolSize` would otherwise
+   * render a solid blob no denser-looking than a single point.
+   */
+  weighted?: boolean
+}
+
+/** Marker sizing for a weighted (deduped) scatter — count-aware, capped so dense points don't dominate. */
+export function weightedSymbolSize(value: readonly number[]): number {
+  const count = value[2] ?? 1
+  return Math.min(18, 4 + 3 * Math.sqrt(count))
+}
+
+/** Item style for a weighted scatter: same palette, lighter so overlapping markers stay legible. */
+export const weightedScatterItemStyle = {
+  ...scatterStyle.itemStyle,
+  opacity: 0.5,
+} as const

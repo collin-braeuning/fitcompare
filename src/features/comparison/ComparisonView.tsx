@@ -1,33 +1,32 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { BlandAltmanChart, ConcordanceChart, HeartRateChart, type ZoomRange } from '../../components/charts'
 import { GraphCard } from '../../components/GraphCard'
 import { StatBadge } from '../../components/StatBadge'
-import type { LoadedFile } from '../fit-file'
+import { FILE_SLOTS, type LoadedFile } from '../fit-file'
 import { ActivityComparisonTable } from './ActivityComparisonTable'
 import { cccLabel, cccLevel, differenceLevel } from './agreementScale'
 import { useComparisonData } from './useComparisonData'
 import './ComparisonView.css'
 
 interface ComparisonViewProps {
-  files: LoadedFile[]
   loadedBySlot: Record<string, LoadedFile>
   /** The file whose laps and pace are overlaid on the heart rate chart. */
   paceSource: LoadedFile
   paceSourceId: string
-  onStartOver: () => void
 }
 
 /** The results screen: summary table plus the three agreement charts. */
-export function ComparisonView({
-  files,
-  loadedBySlot,
-  paceSource,
-  paceSourceId,
-  onStartOver,
-}: ComparisonViewProps) {
+export function ComparisonView({ loadedBySlot, paceSource, paceSourceId }: ComparisonViewProps) {
   // Zoom lives here rather than inside the chart so the card header can offer
   // a reset control; clearing it is what tells the chart to zoom back out.
   const [zoomRange, setZoomRange] = useState<ZoomRange | null>(null)
+
+  // Same order and slots as the table always compared — one derivation
+  // instead of the caller handing over two correlated props that could drift.
+  const files = useMemo(
+    () => FILE_SLOTS.map((slot) => loadedBySlot[slot.id]).filter((file) => file !== undefined),
+    [loadedBySlot],
+  )
 
   const { chartData, summary } = useComparisonData(loadedBySlot, paceSourceId)
 
@@ -138,14 +137,6 @@ export function ComparisonView({
           </div>
         </div>
       )}
-
-      <div className="row">
-        <div className="col-12 text-center">
-          <button className="btn btn-secondary mt-4" onClick={onStartOver}>
-            Upload Different Files
-          </button>
-        </div>
-      </div>
     </div>
   )
 }
