@@ -16,6 +16,18 @@ export interface BlandAltmanStats {
   lowerLimit: number;
 }
 
+export interface ConcordancePoint {
+  x: number;
+  y: number;
+}
+
+export interface ConcordanceStats {
+  points: ConcordancePoint[];
+  ccc: number;
+  min: number;
+  max: number;
+}
+
 /**
  * Calculate the average and max absolute difference between two arrays of
  * paired samples (e.g. heart rate readings from two devices at matching
@@ -64,4 +76,50 @@ export function calculateBlandAltmanStats(x: number[], y: number[]): BlandAltman
     upperLimit: meanDiff + 1.96 * sdDiff,
     lowerLimit: meanDiff - 1.96 * sdDiff,
   };
+}
+
+/**
+ * Calculate Lin's Concordance Correlation Coefficient (CCC) between two
+ * arrays of paired samples, along with the raw (x, y) points for plotting a
+ * concordance scatter (each device's value against the other's, with an
+ * identity line at x = y). CCC combines precision (correlation) and
+ * accuracy (deviation from the line of equality) into a single score:
+ * ρc = (2 · ρ · σx · σy) / (σx² + σy² + (μx − μy)²)
+ */
+export function calculateConcordanceStats(x: number[], y: number[]): ConcordanceStats | null {
+  if (x.length !== y.length || x.length === 0) {
+    return null;
+  }
+
+  const n = x.length;
+  const meanX = x.reduce((sum, v) => sum + v, 0) / n;
+  const meanY = y.reduce((sum, v) => sum + v, 0) / n;
+
+  let varX = 0;
+  let varY = 0;
+  let covXY = 0;
+
+  for (let i = 0; i < n; i++) {
+    const dx = x[i] - meanX;
+    const dy = y[i] - meanY;
+    varX += dx * dx;
+    varY += dy * dy;
+    covXY += dx * dy;
+  }
+
+  varX /= n;
+  varY /= n;
+  covXY /= n;
+
+  const denominator = varX + varY + (meanX - meanY) ** 2;
+  if (denominator === 0) {
+    return null;
+  }
+
+  const ccc = (2 * covXY) / denominator;
+  const points: ConcordancePoint[] = x.map((xi, i) => ({ x: xi, y: y[i] }));
+  const min = Math.min(...x, ...y);
+  const max = Math.max(...x, ...y);
+
+  return { points, ccc, min, max };
 }

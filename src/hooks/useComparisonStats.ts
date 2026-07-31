@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import type { FileData, GraphDataPoint } from '../types/fitTypes'
-import { calculateAbsoluteDifferenceStats, calculateBlandAltmanStats } from '../utils/comparisonStats'
+import { calculateAbsoluteDifferenceStats, calculateBlandAltmanStats, calculateConcordanceStats } from '../utils/comparisonStats'
 
 export function useComparisonStats(file1Loaded: FileData | null, file2Loaded: FileData | null, combinedGraphData: GraphDataPoint[]) {
   const pairedValues = useMemo(() => {
@@ -44,17 +44,40 @@ export function useComparisonStats(file1Loaded: FileData | null, file2Loaded: Fi
     return calculateBlandAltmanStats(pairedValues.file1Values, pairedValues.file2Values)
   }, [pairedValues])
 
+  const concordanceStats = useMemo(() => {
+    if (!pairedValues) return null
+
+    return calculateConcordanceStats(pairedValues.file1Values, pairedValues.file2Values)
+  }, [pairedValues])
+
   const getDiffColor = (avgAbsDiff: number): string => {
     if (avgAbsDiff <= 3) return 'diff-good'
     if (avgAbsDiff <= 7) return 'diff-warn'
     return 'diff-bad'
   }
 
+  // McBride's (2005) strength-of-agreement benchmarks for Lin's CCC.
+  const getCccColor = (ccc: number): string => {
+    if (ccc >= 0.95) return 'diff-good'
+    if (ccc >= 0.90) return 'diff-warn'
+    return 'diff-bad'
+  }
+
+  const getCccLabel = (ccc: number): string => {
+    if (ccc >= 0.99) return 'almost perfect'
+    if (ccc >= 0.95) return 'substantial'
+    if (ccc >= 0.90) return 'moderate'
+    return 'poor'
+  }
+
   return {
     comparisonStats,
     blandAltmanStats,
+    concordanceStats,
     series1Name: pairedValues?.series1Name ?? null,
     series2Name: pairedValues?.series2Name ?? null,
     getDiffColor,
+    getCccColor,
+    getCccLabel,
   }
 }

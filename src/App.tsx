@@ -5,6 +5,7 @@ import './components/ActivityComparisonTable.css'
 import './components/GraphCard.css'
 import EChartsComponent from './components/EChartsComponent'
 import BlandAltmanChart from './components/BlandAltmanChart'
+import ConcordanceChart from './components/ConcordanceChart'
 import { useFitFileLoader } from './hooks/useFitFileLoader'
 import { useGraphData } from './hooks/useGraphData'
 import { useComparisonStats } from './hooks/useComparisonStats'
@@ -18,7 +19,16 @@ function App() {
   const { data: file2Loaded, parseFile: parseFile2, loadSample: loadSample2, reset: resetFile2 } = useFitFileLoader()
 
   const { combinedGraphData } = useGraphData(file1Loaded, file2Loaded)
-  const { comparisonStats, blandAltmanStats, series1Name, series2Name, getDiffColor } = useComparisonStats(file1Loaded, file2Loaded, combinedGraphData)
+  const {
+    comparisonStats,
+    blandAltmanStats,
+    concordanceStats,
+    series1Name,
+    series2Name,
+    getDiffColor,
+    getCccColor,
+    getCccLabel,
+  } = useComparisonStats(file1Loaded, file2Loaded, combinedGraphData)
 
   const handleZoomChange = useCallback((range: { startIndex: number; endIndex: number } | null) => {
     setZoomIndex(range)
@@ -126,6 +136,17 @@ function App() {
                         <span className="comparison-badge-detail">
                           max {comparisonStats.maxAbsDiff.toFixed(0)} bpm
                         </span>
+                        {concordanceStats && (
+                          <>
+                            <span className="comparison-badge-divider" />
+                            <span className={`comparison-badge-value ${getCccColor(concordanceStats.ccc)}`}>
+                              CCC: {concordanceStats.ccc.toFixed(2)}
+                            </span>
+                            <span className="comparison-badge-detail">
+                              {getCccLabel(concordanceStats.ccc)}
+                            </span>
+                          </>
+                        )}
                       </div>
                     )}
                     {zoomIndex && (
@@ -162,6 +183,32 @@ function App() {
                     </div>
                     <BlandAltmanChart
                       stats={blandAltmanStats}
+                      series1Name={series1Name}
+                      series2Name={series2Name}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Concordance Plot (Lin's CCC) */}
+            {concordanceStats && series1Name && series2Name && (
+              <div className="row mb-4">
+                <div className="col-12">
+                  <div className="graph-card">
+                    <div className="graph-header">
+                      <h5>Lin's Concordance Correlation Coefficient</h5>
+                      <div className="comparison-badge">
+                        <span className={`comparison-badge-value ${getCccColor(concordanceStats.ccc)}`}>
+                          CCC: {concordanceStats.ccc.toFixed(2)}
+                        </span>
+                        <span className="comparison-badge-detail">
+                          {getCccLabel(concordanceStats.ccc)}
+                        </span>
+                      </div>
+                    </div>
+                    <ConcordanceChart
+                      stats={concordanceStats}
                       series1Name={series1Name}
                       series2Name={series2Name}
                     />

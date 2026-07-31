@@ -124,6 +124,12 @@
   font-weight: 500;
 }
 
+.comparison-badge-divider {
+  width: 1px;
+  height: 1rem;
+  background: #444;
+}
+
 .diff-good {
   color: #27ae60;
 }
