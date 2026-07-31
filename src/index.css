@@ -57,7 +57,8 @@ button {
   font-size: 1em;
   font-weight: 600;
   font-family: inherit;
-  background-color: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  /* The concrete fill comes from the .btn-* classes in App.css. */
+  background: #444;
   color: white;
   cursor: pointer;
   transition: all 0.25s ease;
