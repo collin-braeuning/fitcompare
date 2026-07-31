@@ -19,7 +19,8 @@ export interface EChartsComponentProps {
   onZoomChange: (range: { startIndex: number; endIndex: number } | null) => void
 }
 
-export interface CorrelationResult {
-  r: number
+export interface ComparisonStats {
+  avgAbsDiff: number
+  maxAbsDiff: number
   matchingPoints: number
 }

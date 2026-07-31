@@ -4,9 +4,10 @@ import './components/FileUploadCard.css'
 import './components/ActivityComparisonTable.css'
 import './components/GraphCard.css'
 import EChartsComponent from './components/EChartsComponent'
+import BlandAltmanChart from './components/BlandAltmanChart'
 import { useFitFileLoader } from './hooks/useFitFileLoader'
 import { useGraphData } from './hooks/useGraphData'
-import { useCorrelation } from './hooks/useCorrelation'
+import { useComparisonStats } from './hooks/useComparisonStats'
 import type { FileData } from './types/fitTypes'
 
 function App() {
@@ -17,7 +18,7 @@ function App() {
   const { data: file2Loaded, parseFile: parseFile2, loadSample: loadSample2, reset: resetFile2 } = useFitFileLoader()
 
   const { combinedGraphData } = useGraphData(file1Loaded, file2Loaded)
-  const { correlationData, getCorrelationColor } = useCorrelation(file1Loaded, file2Loaded, combinedGraphData)
+  const { comparisonStats, blandAltmanStats, series1Name, series2Name, getDiffColor } = useComparisonStats(file1Loaded, file2Loaded, combinedGraphData)
 
   const handleZoomChange = useCallback((range: { startIndex: number; endIndex: number } | null) => {
     setZoomIndex(range)
@@ -117,13 +118,13 @@ function App() {
                 <div className="graph-card">
                   <div className="graph-header">
                     <h5>Heart Rate Comparison</h5>
-                    {correlationData && (
-                      <div className="correlation-badge">
-                        <span className={`correlation-badge-value ${getCorrelationColor(correlationData.r)}`}>
-                          R = {correlationData.r.toFixed(3)}
+                    {comparisonStats && (
+                      <div className="comparison-badge">
+                        <span className={`comparison-badge-value ${getDiffColor(comparisonStats.avgAbsDiff)}`}>
+                          Avg Diff: {comparisonStats.avgAbsDiff.toFixed(1)} bpm
                         </span>
-                        <span className="correlation-badge-points">
-                          ({correlationData.matchingPoints} pts)
+                        <span className="comparison-badge-detail">
+                          max {comparisonStats.maxAbsDiff.toFixed(0)} bpm
                         </span>
                       </div>
                     )}
@@ -142,6 +143,32 @@ function App() {
                 </div>
               </div>
             </div>
+
+            {/* Bland-Altman Agreement Plot */}
+            {blandAltmanStats && series1Name && series2Name && (
+              <div className="row mb-4">
+                <div className="col-12">
+                  <div className="graph-card">
+                    <div className="graph-header">
+                      <h5>Bland-Altman Agreement</h5>
+                      <div className="comparison-badge">
+                        <span className={`comparison-badge-value ${getDiffColor(Math.abs(blandAltmanStats.meanDiff))}`}>
+                          Bias: {blandAltmanStats.meanDiff.toFixed(1)} bpm
+                        </span>
+                        <span className="comparison-badge-detail">
+                          95% LoA [{blandAltmanStats.lowerLimit.toFixed(1)}, {blandAltmanStats.upperLimit.toFixed(1)}]
+                        </span>
+                      </div>
+                    </div>
+                    <BlandAltmanChart
+                      stats={blandAltmanStats}
+                      series1Name={series1Name}
+                      series2Name={series2Name}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Buttons */}
             <div className="row">
